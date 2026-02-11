@@ -1,6 +1,6 @@
-import { Button } from "@/components/ui/button";
-import ServicesHero from "@/components/services/ServicesHero";
-import ServicesList from "@/components/services/ServicesList";
+import { Button } from "@/src/components/ui/button";
+import ServicesHero from "@/src/components/services/ServicesHero";
+import ServicesList from "@/src/components/services/ServicesList";
 import Link from "next/link";
 
 export default function ServicesPage() {
