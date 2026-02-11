@@ -8,7 +8,39 @@ import ShareButtons from "@/src/components/blog/ShareButtons";
 import BackToBlogButton from "@/src/components/blog/BackToBlogButton";
 import { getPostBySlug, getAllPostSlugs, getRelatedPosts } from "@/src/sanity/lib/queries";
 import { portableTextComponents } from "@/src/sanity/lib/portableText";
-import { urlFor } from "@/src/sanity/lib/sanity";
+
+// ----------------------------
+// Define BlogPost type here
+// ----------------------------
+interface BlogPost {
+  _id: string;
+  status: string;
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  coverImage: string;
+  publishedAt: string;
+  readingTime: number;
+  viewCount: number;
+  category: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+  author: {
+    id: string;
+    name: string;
+    role: string;
+    bio: string;
+    avatar: string;
+    social: Record<string, any>;
+  };
+  tags: string[];
+  featured: boolean;
+  metaTitle: string;
+  metaDescription: string;
+}
 
 interface BlogPostPageProps {
   params: Promise<{
@@ -16,13 +48,17 @@ interface BlogPostPageProps {
   }>;
 }
 
-// Generate static params for all blog posts
+// ----------------------------
+// Static params for SSG
+// ----------------------------
 export async function generateStaticParams() {
   const slugs = await getAllPostSlugs();
   return slugs.map((slug: string) => ({ slug }));
 }
 
-// Generate metadata for SEO
+// ----------------------------
+// SEO metadata
+// ----------------------------
 export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
   const { slug } = await params;  
   const post = await getPostBySlug(slug);
@@ -53,6 +89,9 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
   };
 }
 
+// ----------------------------
+// Page Component
+// ----------------------------
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const { slug } = await params;  
 
@@ -62,11 +101,9 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     notFound();
   }
 
-  // Get related posts
   const categoryIds = post.categories?.map((cat: any) => cat._id) || [];
   const relatedPosts = await getRelatedPosts(post._id, categoryIds, 3);
 
-  // Format main post to match BlogPost type
   const formattedPost: BlogPost = {
     _id: post._id,
     status: post.status || "draft",
@@ -93,7 +130,6 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     metaDescription: post.metaDescription || "",
   };
 
-  // Format related posts
   const formattedRelatedPosts = relatedPosts.map((p: any) => ({
     _id: p._id,
     status: p.status || "draft",
@@ -122,35 +158,25 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero Section */}
       <BlogPostHero post={formattedPost} />
-
-      {/* Main Content */}
       <article className="prose prose-lg mx-auto max-w-3xl px-4 py-12">
         <div className="article-content">
           <PortableText value={post.content} components={portableTextComponents} />
         </div>
       </article>
-
-      {/* Author Bio */}
       <AuthorBio author={formattedPost.author} />
-
-      {/* Related Posts */}
-      {formattedRelatedPosts.length > 0 && (
-        <RelatedPosts posts={formattedRelatedPosts} />
-      )}
-
-      {/* Floating Elements */}
+      {formattedRelatedPosts.length > 0 && <RelatedPosts posts={formattedRelatedPosts} />}
       <ShareButtons url={`${process.env.NEXT_PUBLIC_SITE_URL || ""}/blog/${post.slug}`} title={post.title} />
       <BackToBlogButton />
     </div>
   );
 }
 
-// Helper function to calculate reading time from Portable Text
+// ----------------------------
+// Helper: reading time
+// ----------------------------
 function calculateReadingTime(content: any[]): number {
   if (!content) return 5;
-
   const text = content
     .filter((block) => block._type === "block")
     .map((block) =>
@@ -160,7 +186,6 @@ function calculateReadingTime(content: any[]): number {
         .join("")
     )
     .join(" ");
-
   const wordsPerMinute = 200;
   const wordCount = text.trim().split(/\s+/).length;
   return Math.ceil(wordCount / wordsPerMinute) || 5;
