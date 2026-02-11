@@ -19,9 +19,7 @@ interface BlogPostPageProps {
 // Generate static params for all blog posts
 export async function generateStaticParams() {
   const slugs = await getAllPostSlugs();
-  return slugs.map((slug: string) => ({
-    slug,
-  }));
+  return slugs.map((slug: string) => ({ slug }));
 }
 
 // Generate metadata for SEO
@@ -30,9 +28,7 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
   const post = await getPostBySlug(slug);
 
   if (!post) {
-    return {
-      title: "Post Not Found",
-    };
+    return { title: "Post Not Found" };
   }
 
   const ogImage = post.ogImage?.asset?.url || post.mainImage?.asset?.url;
@@ -70,49 +66,58 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const categoryIds = post.categories?.map((cat: any) => cat._id) || [];
   const relatedPosts = await getRelatedPosts(post._id, categoryIds, 3);
 
-  // Convert Sanity post to component format
-  const formattedPost = {
-    id: post._id,
+  // Format main post to match BlogPost type
+  const formattedPost: BlogPost = {
+    _id: post._id,
+    status: post.status || "draft",
+    id: post.id || post._id,
     title: post.title,
     slug: post.slug,
-    excerpt: post.excerpt,
-    coverImage: post.mainImage?.asset?.url || "",
+    excerpt: post.excerpt || "",
+    coverImage: post.coverImage || post.mainImage?.asset?.url || "",
     publishedAt: post.publishedAt,
     readingTime: calculateReadingTime(post.content),
-    viewCount: 0, // You can add view tracking later
+    viewCount: post.viewCount || 0,
     category: post.categories?.[0] || { id: "", name: "Uncategorized", slug: "" },
     author: {
-      id: post.author._id,
+      id: post.author.id || post.author._id,
       name: post.author.name,
-      role: "Content Creator",
-      bio: post.author.bio?.[0]?.children?.[0]?.text || "",
-      avatar: post.author.image?.asset?.url || "",
-      social: {},
+      role: post.author.role || "Content Creator",
+      bio: post.author.bio || "",
+      avatar: post.author.avatar || post.author.image?.asset?.url || "",
+      social: post.author.social || {},
     },
+    tags: post.tags || [],
+    featured: post.featured || false,
+    metaTitle: post.metaTitle || "",
+    metaDescription: post.metaDescription || "",
   };
 
+  // Format related posts
   const formattedRelatedPosts = relatedPosts.map((p: any) => ({
-    id: p._id,
+    _id: p._id,
+    status: p.status || "draft",
+    id: p.id || p._id,
     title: p.title,
     slug: p.slug,
-    excerpt: p.excerpt,
+    excerpt: p.excerpt || "",
     coverImage: p.mainImage?.asset?.url || "",
     publishedAt: p.publishedAt,
     readingTime: 5,
     viewCount: 0,
     category: p.categories?.[0] || { id: "", name: "Uncategorized", slug: "" },
     author: {
-      id: p.author._id,
+      id: p.author.id || p.author._id,
       name: p.author.name,
-      role: "Content Creator",
-      bio: "",
-      avatar: p.author.image?.asset?.url || "",
-      social: {},
+      role: p.author.role || "Content Creator",
+      bio: p.author.bio || "",
+      avatar: p.author.avatar || p.author.image?.asset?.url || "",
+      social: p.author.social || {},
     },
-    tags: [],
-    featured: false,
-    metaTitle: "",
-    metaDescription: "",
+    tags: p.tags || [],
+    featured: p.featured || false,
+    metaTitle: p.metaTitle || "",
+    metaDescription: p.metaDescription || "",
   }));
 
   return (
