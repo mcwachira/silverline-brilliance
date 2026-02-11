@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
-import stageLighting from "@/assets/stage-lighting.jpg";
+import stageLighting from "@/src/assets/stage-lighting.jpg";
 
 const ContactHero = () => {
   return (

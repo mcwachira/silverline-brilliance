@@ -149,15 +149,11 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section - Client Component for Search */}
-      <BlogHero onSearch={() => {}} />
+      <BlogHero />
 
       {/* Filters - Client Component */}
       <BlogFilters
         categories={formattedCategories}
-        activeCategory={selectedCategory}
-        onCategoryChange={() => {}}
-        sortBy="latest"
-        onSortChange={() => {}}
       />
 
       {/* Main Content */}
@@ -199,7 +195,6 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
                   <Pagination
                     currentPage={currentPage}
                     totalPages={totalPages}
-                    onPageChange={() => {}}
                   />
                 )}
               </div>

@@ -3,9 +3,9 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/src/components/ui/button";
 
-import heroImage from "@/assets/hero-av-equipment.jpg";
+import heroImage from "@/src/assets/hero-av-equipment.jpg";
 
 const Hero = () => {
   return (

@@ -1,12 +1,10 @@
 "use client";
 
 import { Search } from "lucide-react";
+import { useState } from "react";
 
-interface BlogHeroProps {
-  onSearch: (query: string) => void;
-}
-
-export default function BlogHero({ onSearch }: BlogHeroProps) {
+export default function BlogHero() {
+  const [searchQuery, setSearchQuery] = useState("");
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-primary-dark via-primary to-primary-light py-20 md:py-28">
       {/* Pattern Overlay */}
@@ -36,7 +34,8 @@ export default function BlogHero({ onSearch }: BlogHeroProps) {
               <input
                 type="text"
                 placeholder="Search articles, tips, guides..."
-                onChange={(e) => onSearch(e.target.value)}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                value={searchQuery}
                 className="w-full rounded-full border-2 border-white/20 bg-white/95 px-6 py-4 pl-14 text-lg text-gray-800 shadow-2xl backdrop-blur-sm transition-all duration-300 placeholder:text-gray-500 focus:border-accent focus:outline-none focus:ring-4 focus:ring-accent/30"
               />
               <Search className="absolute left-5 top-1/2 h-6 w-6 -translate-y-1/2 text-accent" />

@@ -2,9 +2,9 @@
 import { motion } from "framer-motion";
 import Image from "next/image";
 
-import soundEquipment from "@/assets/sound-equipment.jpg";
-import stageLighting from "@/assets/stage-lighting.jpg";
-import videoProduction from "@/assets/video-production.jpg";
+import soundEquipment from "@/src/assets/sound-equipment.jpg";
+import stageLighting from "@/src/assets/stage-lighting.jpg";
+import videoProduction from "@/src/assets/video-production.jpg";
 
 const items = [
   { src: soundEquipment, title: "Audio Mixing", category: "Sound" },
