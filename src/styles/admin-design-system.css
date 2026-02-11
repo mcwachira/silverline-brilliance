@@ -1,0 +1,729 @@
+/* 
+  ADMIN DASHBOARD DESIGN SYSTEM
+  Following the exact specifications provided
+*/
+
+/* ================================
+   COLOR SCHEME
+   ================================ */
+
+:root {
+  /* Primary Colors */
+  --admin-primary: #8B1FA8;
+  --admin-primary-light: #9B3FB8;
+  --admin-primary-dark: #7B1598;
+  
+  /* Secondary (Gold) */
+  --admin-secondary: #FFD700;
+  --admin-secondary-light: #FFDE44;
+  --admin-secondary-dark: #E5C600;
+  
+  /* Semantic Colors */
+  --admin-success: #28A745;
+  --admin-success-light: #34CE57;
+  --admin-success-dark: #1E7E34;
+  
+  --admin-warning: #FFC107;
+  --admin-warning-light: #FFCA2A;
+  --admin-warning-dark: #E0A800;
+  
+  --admin-danger: #DC3545;
+  --admin-danger-light: #E4606D;
+  --admin-danger-dark: #BD2130;
+  
+  --admin-info: #17A2B8;
+  --admin-info-light: #2AB5D0;
+  --admin-info-dark: #138496;
+  
+  /* Neutral Colors */
+  --admin-background: #F8F9FA;
+  --admin-card-bg: #FFFFFF;
+  --admin-text: #212529;
+  --admin-text-muted: #6C757D;
+  --admin-border: #DEE2E6;
+  --admin-border-light: #E9ECEF;
+  
+  /* Shadow Colors */
+  --admin-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+  --admin-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+  --admin-shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.15), 0 6px 10px rgba(0, 0, 0, 0.18);
+}
+
+/* ================================
+   TYPOGRAPHY
+   ================================ */
+
+.admin-heading-1 {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 700;
+  font-size: 2.25rem;
+  line-height: 1.2;
+  color: var(--admin-text);
+}
+
+.admin-heading-2 {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 600;
+  font-size: 1.875rem;
+  line-height: 1.3;
+  color: var(--admin-text);
+}
+
+.admin-heading-3 {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 600;
+  font-size: 1.5rem;
+  line-height: 1.4;
+  color: var(--admin-text);
+}
+
+.admin-heading-4 {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 600;
+  font-size: 1.25rem;
+  line-height: 1.4;
+  color: var(--admin-text);
+}
+
+.admin-body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 400;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--admin-text);
+}
+
+.admin-body-sm {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 400;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--admin-text);
+}
+
+.admin-body-xs {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 400;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--admin-text);
+}
+
+/* ================================
+   COMPONENTS
+   ================================ */
+
+/* Buttons */
+.admin-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 500;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  text-decoration: none;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.admin-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Primary Button (Gold) */
+.admin-btn-primary {
+  background: linear-gradient(135deg, var(--admin-secondary), var(--admin-secondary-light));
+  color: #FFFFFF;
+  box-shadow: var(--admin-shadow-sm);
+}
+
+.admin-btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--admin-secondary-dark), var(--admin-secondary));
+  box-shadow: var(--admin-shadow);
+  transform: translateY(-1px);
+}
+
+/* Secondary Button */
+.admin-btn-secondary {
+  background: var(--admin-card-bg);
+  color: var(--admin-primary);
+  border-color: var(--admin-secondary);
+}
+
+.admin-btn-secondary:hover:not(:disabled) {
+  background: var(--admin-background);
+  border-color: var(--admin-secondary-dark);
+}
+
+/* Danger Button */
+.admin-btn-danger {
+  background: var(--admin-danger);
+  color: #FFFFFF;
+}
+
+.admin-btn-danger:hover:not(:disabled) {
+  background: var(--admin-danger-dark);
+}
+
+/* Size Variants */
+.admin-btn-sm {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+.admin-btn-lg {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+}
+
+/* Status Badges */
+.admin-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 500;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.admin-badge-success {
+  background: var(--admin-success);
+  color: #FFFFFF;
+}
+
+.admin-badge-warning {
+  background: var(--admin-warning);
+  color: #000000;
+}
+
+.admin-badge-danger {
+  background: var(--admin-danger);
+  color: #FFFFFF;
+}
+
+.admin-badge-info {
+  background: var(--admin-info);
+  color: #FFFFFF;
+}
+
+.admin-badge-purple {
+  background: var(--admin-primary);
+  color: #FFFFFF;
+}
+
+.admin-badge-gray {
+  background: var(--admin-text-muted);
+  color: #FFFFFF;
+}
+
+/* Cards */
+.admin-card {
+  background: var(--admin-card-bg);
+  border-radius: 0.5rem;
+  padding: 1.25rem;
+  box-shadow: var(--admin-shadow-sm);
+  border: 1px solid var(--admin-border);
+}
+
+.admin-card-hover:hover {
+  box-shadow: var(--admin-shadow);
+  transform: translateY(-2px);
+  transition: all 0.2s ease-in-out;
+}
+
+/* Forms */
+.admin-form-group {
+  margin-bottom: 1rem;
+}
+
+.admin-form-label {
+  display: block;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 500;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: var(--admin-text);
+  margin-bottom: 0.5rem;
+}
+
+.admin-form-label.required::after {
+  content: '*';
+  color: var(--admin-danger);
+  margin-left: 0.25rem;
+}
+
+.admin-form-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--admin-border);
+  border-radius: 0.5rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--admin-text);
+  background: var(--admin-card-bg);
+  transition: all 0.2s ease-in-out;
+}
+
+.admin-form-input:focus {
+  outline: none;
+  border-color: var(--admin-secondary);
+  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+}
+
+.admin-form-input.error {
+  border-color: var(--admin-danger);
+}
+
+.admin-form-error {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--admin-danger);
+  margin-top: 0.25rem;
+}
+
+/* Tables */
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.admin-table th {
+  font-weight: 600;
+  text-align: left;
+  padding: 0.75rem;
+  background: var(--admin-background);
+  border-bottom: 1px solid var(--admin-border);
+  color: var(--admin-text);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.75rem;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.admin-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--admin-border);
+  color: var(--admin-text);
+}
+
+.admin-table tr:nth-child(even) {
+  background: var(--admin-background);
+}
+
+.admin-table tr:hover {
+  background: var(--admin-border-light);
+}
+
+.admin-table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Modals */
+.admin-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.admin-modal {
+  background: var(--admin-card-bg);
+  border-radius: 0.5rem;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--admin-shadow-lg);
+  position: relative;
+}
+
+.admin-modal-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--admin-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.admin-modal-title {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 600;
+  font-size: 1.25rem;
+  line-height: 1.4;
+  color: var(--admin-text);
+}
+
+.admin-modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.25rem;
+  background: transparent;
+  border: none;
+  color: var(--admin-text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.admin-modal-close:hover {
+  background: var(--admin-background);
+  color: var(--admin-text);
+}
+
+.admin-modal-body {
+  padding: 1.5rem;
+}
+
+.admin-modal-footer {
+  padding: 1.5rem;
+  border-top: 1px solid var(--admin-border);
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+/* Notifications/Alerts */
+.admin-alert {
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  border: 1px solid transparent;
+}
+
+.admin-alert-success {
+  background: rgba(40, 167, 69, 0.12);
+  color: var(--admin-success);
+  border-color: var(--admin-success);
+}
+
+.admin-alert-error {
+  background: rgba(220, 53, 69, 0.12);
+  color: var(--admin-danger);
+  border-color: var(--admin-danger);
+}
+
+.admin-alert-warning {
+  background: rgba(255, 193, 7, 0.12);
+  color: var(--admin-warning);
+  border-color: var(--admin-warning);
+}
+
+.admin-alert-info {
+  background: rgba(23, 162, 184, 0.12);
+  color: var(--admin-info);
+  border-color: var(--admin-info);
+}
+
+/* Toast Notifications */
+.admin-toast {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 2000;
+  min-width: 250px;
+  max-width: 400px;
+  animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+/* ================================
+   RESPONSIVE DESIGN
+   ================================ */
+
+/* Desktop (1200px+) */
+@media (min-width: 1200px) {
+  .admin-sidebar-desktop {
+    display: block;
+  }
+  
+  .admin-table-desktop {
+    display: table;
+  }
+  
+  .admin-grid-desktop {
+    display: grid;
+  }
+}
+
+/* Tablet (768px - 1199px) */
+@media (min-width: 768px) and (max-width: 1199px) {
+  .admin-sidebar-tablet {
+    display: none;
+  }
+  
+  .admin-sidebar-collapsed {
+    display: block;
+  }
+  
+  .admin-table-tablet {
+    font-size: 0.75rem;
+  }
+  
+  .admin-card-tablet {
+    padding: 1rem;
+  }
+}
+
+/* Mobile (< 768px) */
+@media (max-width: 767px) {
+  .admin-sidebar-mobile {
+    display: none;
+  }
+  
+  .admin-hamburger-menu {
+    display: block;
+  }
+  
+  .admin-table-mobile {
+    display: block;
+  }
+  
+  .admin-table-mobile thead {
+    display: none;
+  }
+  
+  .admin-table-mobile tbody,
+  .admin-table-mobile tr,
+  .admin-table-mobile td {
+    display: block;
+    width: 100%;
+  }
+  
+  .admin-table-mobile tr {
+    margin-bottom: 1rem;
+    border: 1px solid var(--admin-border);
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    background: var(--admin-card-bg);
+  }
+  
+  .admin-table-mobile td {
+    border: none;
+    padding: 0.25rem 0;
+    text-align: left;
+  }
+  
+  .admin-table-mobile td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: var(--admin-text-muted);
+    margin-right: 0.5rem;
+  }
+  
+  .admin-card-mobile {
+    padding: 1rem;
+    margin: 0.5rem 0;
+  }
+  
+  .admin-modal {
+    margin: 1rem;
+    max-height: calc(100vh - 2rem);
+  }
+  
+  .admin-btn-mobile {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .admin-stats-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+/* ================================
+   UTILITY CLASSES
+   ================================ */
+
+.admin-text-center {
+  text-align: center;
+}
+
+.admin-text-left {
+  text-align: left;
+}
+
+.admin-text-right {
+  text-align: right;
+}
+
+.admin-flex {
+  display: flex;
+}
+
+.admin-flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.admin-flex-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-gap-2 {
+  gap: 0.5rem;
+}
+
+.admin-gap-4 {
+  gap: 1rem;
+}
+
+.admin-gap-6 {
+  gap: 1.5rem;
+}
+
+.admin-mt-2 {
+  margin-top: 0.5rem;
+}
+
+.admin-mt-4 {
+  margin-top: 1rem;
+}
+
+.admin-mt-6 {
+  margin-top: 1.5rem;
+}
+
+.admin-mb-2 {
+  margin-bottom: 0.5rem;
+}
+
+.admin-mb-4 {
+  margin-bottom: 1rem;
+}
+
+.admin-mb-6 {
+  margin-bottom: 1.5rem;
+}
+
+.admin-hidden {
+  display: none;
+}
+
+.admin-block {
+  display: block;
+}
+
+.admin-inline-block {
+  display: inline-block;
+}
+
+.admin-w-full {
+  width: 100%;
+}
+
+.admin-h-full {
+  height: 100%;
+}
+
+.admin-min-h-screen {
+  min-height: 100vh;
+}
+
+/* ================================
+   ANIMATIONS
+   ================================ */
+
+.admin-fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.admin-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.admin-pulse {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
