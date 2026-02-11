@@ -17,10 +17,10 @@ import {
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 
-import soundEquipment from "@/assets/sound-equipment.jpg";
-import stageLighting from "@/assets/stage-lighting.jpg";
-import videoProduction from "@/assets/video-production.jpg";
-import heroImage from "@/assets/hero-av-equipment.jpg";
+import soundEquipment from "@/src/assets/sound-equipment.jpg";
+import stageLighting from "@/src/assets/stage-lighting.jpg";
+import videoProduction from "@/src/assets/video-production.jpg";
+import heroImage from "@/src/assets/hero-av-equipment.jpg";
 
 const services = [
   {
