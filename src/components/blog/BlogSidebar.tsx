@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Mail, TrendingUp, Tag as TagIcon } from "lucide-react";
 import { BlogPost, Category, Tag } from "@/types/blog";
-import { formatDate } from "@/lib/blogUtils";
+import { formatDate } from "@/src/lib/blogUtils";
 
 interface BlogSidebarProps {
   popularPosts: BlogPost[];

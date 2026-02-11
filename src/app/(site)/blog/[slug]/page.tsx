@@ -1,19 +1,19 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PortableText } from "@portabletext/react";
-import BlogPostHero from "@/components/blog/BlogPostHero";
-import AuthorBio from "@/components/blog/AuthorBio";
-import RelatedPosts from "@/components/blog/RelatedPosts";
-import ShareButtons from "@/components/blog/ShareButtons";
-import BackToBlogButton from "@/components/blog/BackToBlogButton";
-import { getPostBySlug, getAllPostSlugs, getRelatedPosts } from "@/lib/sanity/queries";
-import { portableTextComponents } from "@/lib/sanity/portableText";
-import { urlFor } from "@/sanity/lib/sanity";
+import BlogPostHero from "@/src/components/blog/BlogPostHero";
+import AuthorBio from "@/src/components/blog/AuthorBio";
+import RelatedPosts from "@/src/components/blog/RelatedPosts";
+import ShareButtons from "@/src/components/blog/ShareButtons";
+import BackToBlogButton from "@/src/components/blog/BackToBlogButton";
+import { getPostBySlug, getAllPostSlugs, getRelatedPosts } from "@/src/sanity/lib/queries";
+import { portableTextComponents } from "@/src/sanity/lib/portableText";
+import { urlFor } from "@/src/sanity/lib/sanity";
 
 interface BlogPostPageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
 // Generate static params for all blog posts
@@ -26,7 +26,8 @@ export async function generateStaticParams() {
 
 // Generate metadata for SEO
 export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
-  const post = await getPostBySlug(params.slug);
+  const { slug } = await params;  
+  const post = await getPostBySlug(slug);
 
   if (!post) {
     return {
@@ -57,7 +58,9 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
 }
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
-  const post = await getPostBySlug(params.slug);
+  const { slug } = await params;  
+
+  const post = await getPostBySlug(slug);
 
   if (!post) {
     notFound();

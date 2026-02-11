@@ -1,11 +1,11 @@
 import { Metadata } from "next";
-import BlogHero from "@/components/blog/BlogHero";
-import BlogFilters from "@/components/blog/BlogFilters";
-import FeaturedPost from "@/components/blog/FeaturedPost";
-import BlogCard from "@/components/blog/BlogCard";
-import BlogSidebar from "@/components/blog/BlogSidebar";
-import Pagination from "@/components/blog/Pagination";
-import { getAllPosts, getAllCategories, getPopularPosts } from "@/lib/sanity/queries";
+import BlogHero from "@/src/components/blog/BlogHero";
+import BlogFilters from "@/src/components/blog/BlogFilters";
+import FeaturedPost from "@/src/components/blog/FeaturedPost";
+import BlogCard from "@/src/components/blog/BlogCard";
+import BlogSidebar from "@/src/components/blog/BlogSidebar";
+import Pagination from "@/src/components/blog/Pagination";
+import { getAllPosts, getAllCategories, getPopularPosts } from "@/src/sanity/lib/queries";
 
 export const metadata: Metadata = {
   title: "Blog | Silverline Brilliance",
@@ -15,17 +15,19 @@ export const metadata: Metadata = {
 const POSTS_PER_PAGE = 9;
 
 interface BlogPageProps {
-  searchParams: {
+  searchParams: Promise<{
     page?: string;
     category?: string;
     search?: string;
-  };
+  }>;
 }
 
 export default async function BlogPage({ searchParams }: BlogPageProps) {
-  const currentPage = parseInt(searchParams.page || "1");
-  const selectedCategory = searchParams.category || "all";
-  const searchQuery = searchParams.search || "";
+  const params = await searchParams;
+
+  const currentPage = parseInt(params.page || "1");
+  const selectedCategory = params.category || "all";
+  const searchQuery = params.search || "";
 
   // Fetch data from Sanity
   const allPosts = await getAllPosts();

@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Calendar, Clock, Eye, ChevronRight, User } from "lucide-react";
 import { BlogPost } from "@/types/blog";
-import { formatDate, formatViewCount } from "@/lib/blogUtils";
+import { formatDate, formatViewCount } from "@/src/lib/blogUtils";
 
 interface BlogPostHeroProps {
   post: BlogPost;
