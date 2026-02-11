@@ -6,27 +6,78 @@ import AuthorBio from "@/src/components/blog/AuthorBio";
 import RelatedPosts from "@/src/components/blog/RelatedPosts";
 import ShareButtons from "@/src/components/blog/ShareButtons";
 import BackToBlogButton from "@/src/components/blog/BackToBlogButton";
-import { getPostBySlug, getAllPostSlugs, getRelatedPosts } from "@/src/sanity/lib/queries";
+import {
+  getPostBySlug,
+  getAllPostSlugs,
+  getRelatedPosts,
+} from "@/src/sanity/lib/queries";
 import { portableTextComponents } from "@/src/sanity/lib/portableText";
-import { urlFor } from "@/src/sanity/lib/sanity";
 
+// --------------------
+// Type Definitions
+// --------------------
+interface Author {
+  id: string;
+  name: string;
+  role: string;
+  bio: string;
+  avatar: string;
+  social: Record<string, string>;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+interface Slug {
+  current: string;
+}
+
+interface BlogPost {
+  _id: string;
+  status: string;
+  id: string;
+  title: string;
+  slug: Slug;
+  excerpt: string;
+  coverImage: string;
+  publishedAt: string;
+  readingTime: number;
+  viewCount: number;
+  category: Category;
+  author: Author;
+  tags: string[];
+  featured: boolean;
+  metaTitle: string;
+  metaDescription: string;
+}
+
+// --------------------
+// Props
+// --------------------
 interface BlogPostPageProps {
   params: Promise<{
     slug: string;
   }>;
 }
 
-// Generate static params for all blog posts
+// --------------------
+// Generate static params for all posts
+// --------------------
 export async function generateStaticParams() {
   const slugs = await getAllPostSlugs();
-  return slugs.map((slug: string) => ({
-    slug,
-  }));
+  return slugs.map((slug: string) => ({ slug }));
 }
 
+// --------------------
 // Generate metadata for SEO
-export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
-  const { slug } = await params;  
+// --------------------
+export async function generateMetadata({
+  params,
+}: BlogPostPageProps): Promise<Metadata> {
+  const { slug } = await params;
   const post = await getPostBySlug(slug);
 
   if (!post) {
@@ -55,35 +106,40 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
   };
 }
 
+// --------------------
+// Blog Post Page
+// --------------------
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
-  const { slug } = await params;  
+  const { slug } = await params;
   const post = await getPostBySlug(slug);
 
-  if (!post) notFound();
+  if (!post) {
+    notFound();
+  }
 
-  // Get related posts
+  // Related posts
   const categoryIds = post.categories?.map((cat: any) => cat._id) || [];
-  const relatedPosts = await getRelatedPosts(post._id, categoryIds, 3);
+  const relatedPostsData = await getRelatedPosts(post._id, categoryIds, 3);
 
-  // Format main post to match BlogPost type
+  // Format main post
   const formattedPost: BlogPost = {
     _id: post._id,
     status: post.status || "draft",
     id: post.id || post._id,
     title: post.title,
-    slug: { current: post.slug }, // slug must be object
-    excerpt: post.excerpt || "",
-    coverImage: post.coverImage || post.mainImage?.asset?.url || "",
+    slug: { current: post.slug },
+    excerpt: post.excerpt,
+    coverImage: post.coverImage,
     publishedAt: post.publishedAt,
     readingTime: calculateReadingTime(post.content),
     viewCount: post.viewCount || 0,
-    category: post.categories?.[0] || { id: "", name: "Uncategorized", slug: "" },
+    category: post.category || { id: "", name: "Uncategorized", slug: "" },
     author: {
-      id: post.author.id || post.author._id,
+      id: post.author.id,
       name: post.author.name,
-      role: post.author.role || "Content Creator",
-      bio: post.author.bio || "",
-      avatar: post.author.avatar || post.author.image?.asset?.url || "",
+      role: post.author.role,
+      bio: post.author.bio,
+      avatar: post.author.avatar,
       social: post.author.social || {},
     },
     tags: post.tags || [],
@@ -92,30 +148,29 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     metaDescription: post.metaDescription || "",
   };
 
-  const formattedRelatedPosts = relatedPosts.map((p: any) => ({
-    _id: p._id,
-    status: p.status || "draft",
-    id: p.id || p._id,
+  // Format related posts
+  const formattedRelatedPosts = relatedPostsData.map((p: any) => ({
+    id: p._id,
     title: p.title,
-    slug: { current: p.slug }, // slug must be object
-    excerpt: p.excerpt || "",
+    slug: { current: p.slug },
+    excerpt: p.excerpt,
     coverImage: p.mainImage?.asset?.url || "",
     publishedAt: p.publishedAt,
     readingTime: 5,
-    viewCount: 0,
+    viewCount: p.viewCount || 0,
     category: p.categories?.[0] || { id: "", name: "Uncategorized", slug: "" },
     author: {
-      id: p.author.id || p.author._id,
+      id: p.author._id,
       name: p.author.name,
-      role: p.author.role || "Content Creator",
-      bio: p.author.bio || "",
-      avatar: p.author.avatar || p.author.image?.asset?.url || "",
-      social: p.author.social || {},
+      role: "Content Creator",
+      bio: "",
+      avatar: p.author.image?.asset?.url || "",
+      social: {},
     },
-    tags: p.tags || [],
-    featured: p.featured || false,
-    metaTitle: p.metaTitle || "",
-    metaDescription: p.metaDescription || "",
+    tags: [],
+    featured: false,
+    metaTitle: "",
+    metaDescription: "",
   }));
 
   return (
@@ -134,16 +189,23 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
       <AuthorBio author={formattedPost.author} />
 
       {/* Related Posts */}
-      {formattedRelatedPosts.length > 0 && <RelatedPosts posts={formattedRelatedPosts} />}
+      {formattedRelatedPosts.length > 0 && (
+        <RelatedPosts posts={formattedRelatedPosts} />
+      )}
 
       {/* Floating Elements */}
-      <ShareButtons url={`${process.env.NEXT_PUBLIC_SITE_URL || ""}/blog/${post.slug}`} title={post.title} />
+      <ShareButtons
+        url={`${process.env.NEXT_PUBLIC_SITE_URL || ""}/blog/${post.slug}`}
+        title={post.title}
+      />
       <BackToBlogButton />
     </div>
   );
 }
 
-// Helper function to calculate reading time from Portable Text
+// --------------------
+// Helper: Calculate reading time
+// --------------------
 function calculateReadingTime(content: any[]): number {
   if (!content) return 5;
 
