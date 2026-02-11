@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Calendar, Clock, Eye, ChevronRight, User } from "lucide-react";
+import { Calendar, Clock, Eye, ChevronRight } from "lucide-react";
 import { BlogPost } from "@/types/blog";
 import { formatDate, formatViewCount } from "@/src/lib/blogUtils";
 
@@ -15,13 +15,16 @@ export default function BlogPostHero({ post }: BlogPostHeroProps) {
     <section className="relative">
       {/* Hero Image */}
       <div className="relative h-[60vh] min-h-[500px] w-full">
-        <Image
-          src={post.coverImage}
-          alt={post.title}
-          fill
-          className="object-cover"
-          priority
-        />
+        {post.coverImage && (
+          <Image
+            src={post.coverImage}
+            alt={post.title}
+            fill
+            className="object-cover"
+            priority
+          />
+        )}
+
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/30" />
 
@@ -65,14 +68,16 @@ export default function BlogPostHero({ post }: BlogPostHeroProps) {
               <div className="flex flex-wrap items-center gap-6 text-white">
                 {/* Author */}
                 <div className="flex items-center gap-3">
-                  <div className="relative h-12 w-12 overflow-hidden rounded-full border-2 border-accent">
-                    <Image
-                      src={post.author.avatar}
-                      alt={post.author.name}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
+                  {post.author.avatar && (
+                    <div className="relative h-12 w-12 overflow-hidden rounded-full border-2 border-accent">
+                      <Image
+                        src={post.author.avatar}
+                        alt={post.author.name}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                  )}
                   <div>
                     <p className="font-semibold">{post.author.name}</p>
                     <p className="text-sm text-white/70">{post.author.role}</p>

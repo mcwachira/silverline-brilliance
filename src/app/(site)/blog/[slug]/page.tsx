@@ -6,79 +6,29 @@ import AuthorBio from "@/src/components/blog/AuthorBio";
 import RelatedPosts from "@/src/components/blog/RelatedPosts";
 import ShareButtons from "@/src/components/blog/ShareButtons";
 import BackToBlogButton from "@/src/components/blog/BackToBlogButton";
-import {
-  getPostBySlug,
-  getAllPostSlugs,
-  getRelatedPosts,
-} from "@/src/sanity/lib/queries";
+import { getPostBySlug, getAllPostSlugs, getRelatedPosts } from "@/src/sanity/lib/queries";
 import { portableTextComponents } from "@/src/sanity/lib/portableText";
+import { urlFor } from "@/src/sanity/lib/sanity";
+import { BlogPost } from "@/types/blog";
 
-// --------------------
-// Type Definitions
-// --------------------
-interface Author {
-  id: string;
-  name: string;
-  role: string;
-  bio: string;
-  avatar: string;
-  social: Record<string, string>;
-}
-
-interface Category {
-  id: string;
-  name: string;
-  slug: string;
-}
-
-interface Slug {
-  current: string;
-}
-
-interface BlogPost {
-  _id: string;
-  status: string;
-  id: string;
-  title: string;
-  slug: Slug;
-  excerpt: string;
-  coverImage: string;
-  publishedAt: string;
-  readingTime: number;
-  viewCount: number;
-  category: Category;
-  author: Author;
-  tags: string[];
-  featured: boolean;
-  metaTitle: string;
-  metaDescription: string;
-}
-
-// --------------------
-// Props
-// --------------------
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>;
 }
 
-// --------------------
-// Generate static params
-// --------------------
+// Generate static params for all blog posts
 export async function generateStaticParams() {
   const slugs = await getAllPostSlugs();
   return slugs.map((slug: string) => ({ slug }));
 }
 
-// --------------------
-// Generate Metadata
-// --------------------
-export async function generateMetadata({
-  params,
-}: BlogPostPageProps): Promise<Metadata> {
+// Generate metadata for SEO
+export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
   const { slug } = await params;
   const post = await getPostBySlug(slug);
 
-  if (!post) return { title: "Post Not Found" };
+  if (!post) {
+    return { title: "Post Not Found" };
+  }
 
   const ogImage = post.ogImage?.asset?.url || post.mainImage?.asset?.url;
 
@@ -102,36 +52,32 @@ export async function generateMetadata({
   };
 }
 
-// --------------------
-// BlogPost Page
-// --------------------
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const { slug } = await params;
   const post = await getPostBySlug(slug);
 
   if (!post) notFound();
 
-  // Related posts
-  const categoryIds = post.categories?.map((cat: any) => cat._id) || [];
-  const relatedPostsData = await getRelatedPosts(post._id, categoryIds, 3);
-
-  // Format main post
+  // Format main post to match BlogPost type
   const formattedPost: BlogPost = {
     _id: post._id,
     status: post.status || "draft",
-    id: post.id || post._id,
+    id: post._id,
     title: post.title,
-    slug: { current: post.slug }, // ✅ must be { current: string }
-    excerpt: post.excerpt || "",
+    slug: { current: post.slug },
+    excerpt: post.excerpt,
     coverImage: post.coverImage || "",
-    publishedAt: post.publishedAt || new Date().toISOString(),
+    publishedAt: post.publishedAt,
     readingTime: calculateReadingTime(post.content),
     viewCount: post.viewCount || 0,
-    category: post.category || { id: "", name: "Uncategorized", slug: "" },
+    category: {
+      name: post.category?.name || "Uncategorized",
+      slug: post.category?.slug || "uncategorized",
+    },
     author: {
-      id: post.author.id,
+      id: post.author._id,
       name: post.author.name,
-      role: post.author.role,
+      role: post.author.role || "Author",
       bio: post.author.bio || "",
       avatar: post.author.avatar || "",
       social: post.author.social || {},
@@ -142,17 +88,25 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     metaDescription: post.metaDescription || "",
   };
 
-  // Format related posts
-  const formattedRelatedPosts = relatedPostsData.map((p: any) => ({
+  // Get related posts
+  const categoryIds = post.categories?.map((cat: any) => cat._id) || [];
+  const relatedPostsRaw = await getRelatedPosts(post._id, categoryIds, 3);
+
+  const formattedRelatedPosts: BlogPost[] = relatedPostsRaw.map((p: any) => ({
+    _id: p._id,
+    status: p.status || "draft",
     id: p._id,
     title: p.title,
     slug: { current: p.slug },
-    excerpt: p.excerpt || "",
+    excerpt: p.excerpt,
     coverImage: p.mainImage?.asset?.url || "",
-    publishedAt: p.publishedAt || new Date().toISOString(),
+    publishedAt: p.publishedAt,
     readingTime: 5,
-    viewCount: p.viewCount || 0,
-    category: p.categories?.[0] || { id: "", name: "Uncategorized", slug: "" },
+    viewCount: 0,
+    category: {
+      name: p.categories?.[0]?.name || "Uncategorized",
+      slug: p.categories?.[0]?.slug || "uncategorized",
+    },
     author: {
       id: p.author._id,
       name: p.author.name,
@@ -172,28 +126,25 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
       <BlogPostHero post={formattedPost} />
 
       <article className="prose prose-lg mx-auto max-w-3xl px-4 py-12">
-        <PortableText value={post.content} components={portableTextComponents} />
+        <div className="article-content">
+          <PortableText value={post.content} components={portableTextComponents} />
+        </div>
       </article>
 
       <AuthorBio author={formattedPost.author} />
 
-      {formattedRelatedPosts.length > 0 && (
-        <RelatedPosts posts={formattedRelatedPosts} />
-      )}
+      {formattedRelatedPosts.length > 0 && <RelatedPosts posts={formattedRelatedPosts} />}
 
       <ShareButtons
         url={`${process.env.NEXT_PUBLIC_SITE_URL || ""}/blog/${post.slug.current}`}
         title={post.title}
       />
-
       <BackToBlogButton />
     </div>
   );
 }
 
-// --------------------
-// Helper: Reading Time
-// --------------------
+// Helper function to calculate reading time from Portable Text
 function calculateReadingTime(content: any[]): number {
   if (!content) return 5;
 
