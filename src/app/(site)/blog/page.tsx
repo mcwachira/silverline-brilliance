@@ -1,129 +1,109 @@
 import { Metadata } from "next";
-import BlogHero from "@/src/components/blog/BlogHero";
-import BlogFilters from "@/src/components/blog/BlogFilters";
-import FeaturedPost from "@/src/components/blog/FeaturedPost";
-import BlogCard from "@/src/components/blog/BlogCard";
-import BlogSidebar from "@/src/components/blog/BlogSidebar";
-import Pagination from "@/src/components/blog/Pagination";
-import { getAllPosts, getAllCategories, getPopularPosts } from "@/src/sanity/lib/queries";
+import { notFound } from "next/navigation";
+import { PortableText } from "@portabletext/react";
+import BlogPostHero from "@/src/components/blog/BlogPostHero";
+import AuthorBio from "@/src/components/blog/AuthorBio";
+import RelatedPosts from "@/src/components/blog/RelatedPosts";
+import ShareButtons from "@/src/components/blog/ShareButtons";
+import BackToBlogButton from "@/src/components/blog/BackToBlogButton";
+import { getPostBySlug, getAllPostSlugs, getRelatedPosts } from "@/src/sanity/lib/queries";
+import { portableTextComponents } from "@/src/sanity/lib/portableText";
+import { BlogPost } from "@/types/blog";
 
-export const metadata: Metadata = {
-  title: "Blog | Silverline Brilliance",
-  description: "Stay updated with the latest in audiovisual technology, event tips, and industry news.",
-};
-
-const POSTS_PER_PAGE = 9;
-
-interface BlogPageProps {
-  searchParams: Promise<{
-    page?: string;
-    category?: string;
-    search?: string;
-  }>;
+interface BlogPostPageProps {
+  params: Promise<{ slug: string }>;
 }
 
-export default async function BlogPage({ searchParams }: BlogPageProps) {
-  const params = await searchParams;
+// Generate static params for SSG
+export async function generateStaticParams() {
+  const slugs = await getAllPostSlugs();
+  return slugs.map((slug: string) => ({ slug }));
+}
 
-  const currentPage = parseInt(params.page || "1");
-  const selectedCategory = params.category || "all";
-  const searchQuery = params.search || "";
+// Generate metadata for SEO
+export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const post = await getPostBySlug(slug);
 
-  // Fetch data from Sanity
-  const allPosts = await getAllPosts();
-  const categories = await getAllCategories();
-  const popularPosts = await getPopularPosts(5);
-
-  // Filter posts
-  let filteredPosts = allPosts;
-
-  if (searchQuery) {
-    filteredPosts = filteredPosts.filter((post: any) =>
-      post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      post.excerpt?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+  if (!post) {
+    return { title: "Post Not Found" };
   }
 
-  if (selectedCategory !== "all") {
-    filteredPosts = filteredPosts.filter((post: any) =>
-      post.categories?.some((cat: any) => cat.slug === selectedCategory)
-    );
-  }
+  const ogImage = post.ogImage?.asset?.url || post.coverImage?.asset?.url;
 
-  // Pagination
-  const totalPages = Math.ceil(filteredPosts.length / POSTS_PER_PAGE);
-  const startIndex = (currentPage - 1) * POSTS_PER_PAGE;
-  const paginatedPosts = filteredPosts.slice(startIndex, startIndex + POSTS_PER_PAGE);
+  return {
+    title: post.metaTitle || post.title,
+    description: post.metaDescription || post.excerpt,
+    openGraph: {
+      title: post.metaTitle || post.title,
+      description: post.metaDescription || post.excerpt,
+      type: "article",
+      publishedTime: post.publishedAt,
+      authors: [post.author.name],
+      images: ogImage ? [{ url: ogImage }] : [],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: post.metaTitle || post.title,
+      description: post.metaDescription || post.excerpt,
+      images: ogImage ? [ogImage] : [],
+    },
+  };
+}
 
-  // Featured post (first post)
-  const featuredPost = filteredPosts[0];
+export default async function BlogPostPage({ params }: BlogPostPageProps) {
+  const { slug } = await params;
+  const post = await getPostBySlug(slug);
 
-  // Format posts for components
-  const formattedPosts = paginatedPosts.map((post: any) => ({
-    id: post._id,
+  if (!post) notFound();
+
+  // Fetch related posts
+  const categoryIds = post.categories?.map((cat: any) => cat._id) || [];
+  const relatedPostsRaw = await getRelatedPosts(post._id, categoryIds, 3);
+
+  // Format main post
+  const formattedPost: BlogPost = {
+    _id: post._id,
+    status: post.status || "draft",
     title: post.title,
-    slug: post.slug,
-    excerpt: post.excerpt || "",
-    coverImage: post.mainImage?.asset?.url || "",
+    slug: { current: post.slug },
+    excerpt: post.excerpt,
+    coverImage: post.coverImage || "",
     publishedAt: post.publishedAt,
-    readingTime: 5, // You can calculate this from content if needed
-    viewCount: 0,
-    category: post.categories?.[0] || { id: "", name: "Uncategorized", slug: "" },
+    readingTime: calculateReadingTime(post.content),
+    viewCount: post.viewCount || 0,
+    category: {
+      name: post.category?.name || "Uncategorized",
+      slug: post.category?.slug || "uncategorized",
+    },
     author: {
-      id: post.author?._id || "",
-      name: post.author?.name || "Anonymous",
-      role: "Content Creator",
-      bio: post.author?.bio?.[0]?.children?.[0]?.text || "",
-      avatar: post.author?.image?.asset?.url || "",
-      social: {},
+      name: post.author.name,
+      image: post.author.avatar || "",
     },
     tags: post.tags || [],
-    featured: false,
-    metaTitle: "",
-    metaDescription: "",
-  }));
+    featured: post.featured || false,
+    metaTitle: post.metaTitle || "",
+    metaDescription: post.metaDescription || "",
+  };
 
-  const formattedFeaturedPost = featuredPost ? {
-    id: featuredPost._id,
-    title: featuredPost.title,
-    slug: featuredPost.slug,
-    excerpt: featuredPost.excerpt || "",
-    coverImage: featuredPost.mainImage?.asset?.url || "",
-    publishedAt: featuredPost.publishedAt,
+  // Format related posts
+  const formattedRelatedPosts: BlogPost[] = relatedPostsRaw.map((p: any) => ({
+    _id: p._id,
+    status: p.status || "draft",
+    title: p.title,
+    slug: { current: p.slug },
+    excerpt: p.excerpt,
+    coverImage: p.mainImage?.asset?.url || "",
+    publishedAt: p.publishedAt,
     readingTime: 5,
     viewCount: 0,
-    category: featuredPost.categories?.[0] || { id: "", name: "Uncategorized", slug: "" },
-    author: {
-      id: featuredPost.author?._id || "",
-      name: featuredPost.author?.name || "Anonymous",
-      role: "Content Creator",
-      bio: featuredPost.author?.bio?.[0]?.children?.[0]?.text || "",
-      avatar: featuredPost.author?.image?.asset?.url || "",
-      social: {},
+    category: {
+      name: p.categories?.[0]?.name || "Uncategorized",
+      slug: p.categories?.[0]?.slug || "uncategorized",
     },
-    tags: featuredPost.tags || [],
-    featured: true,
-    metaTitle: "",
-    metaDescription: "",
-  } : null;
-
-  const formattedPopularPosts = popularPosts.map((post: any) => ({
-    id: post._id,
-    title: post.title,
-    slug: post.slug,
-    excerpt: post.excerpt || "",
-    coverImage: post.mainImage?.asset?.url || "",
-    publishedAt: post.publishedAt,
-    readingTime: 5,
-    viewCount: 0,
-    category: { id: "", name: "", slug: "" },
     author: {
-      id: "",
-      name: "",
-      role: "",
-      bio: "",
-      avatar: "",
-      social: {},
+      name: p.author.name,
+      image: p.author.image?.asset?.url || "",
     },
     tags: [],
     featured: false,
@@ -131,90 +111,47 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
     metaDescription: "",
   }));
 
-  const formattedCategories = categories.map((cat: any) => ({
-    id: cat._id,
-    name: cat.name,
-    slug: cat.slug,
-    description: cat.description,
-    postCount: cat.postCount || 0,
-  }));
-
-  // Mock tags (you can add a tags collection in Sanity if needed)
-  const tags = [
-    { id: "1", name: "Live Streaming", slug: "live-streaming", count: 12 },
-    { id: "2", name: "Audio", slug: "audio", count: 10 },
-    { id: "3", name: "Video Production", slug: "video-production", count: 15 },
-    { id: "4", name: "LED Displays", slug: "led-displays", count: 8 },
-    { id: "5", name: "Corporate Events", slug: "corporate-events", count: 14 },
-  ];
-
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero Section - Client Component for Search */}
-      <BlogHero />
-
-      {/* Filters - Client Component */}
-      <BlogFilters
-        categories={formattedCategories}
-      />
+      {/* Hero Section */}
+      <BlogPostHero post={formattedPost} />
 
       {/* Main Content */}
-      <div className="container mx-auto px-4 py-12">
-        {filteredPosts.length === 0 ? (
-          <div className="flex min-h-[400px] flex-col items-center justify-center text-center">
-            <p className="mb-2 text-2xl font-bold text-primary">No posts found</p>
-            <p className="text-gray-600">Try adjusting your filters or search query</p>
-          </div>
-        ) : (
-          <>
-            {/* Featured Post */}
-            {formattedFeaturedPost && currentPage === 1 && !searchQuery && (
-              <FeaturedPost post={formattedFeaturedPost} />
-            )}
+      <article className="prose prose-lg mx-auto max-w-3xl px-4 py-12">
+        <div className="article-content">
+          <PortableText value={post.content} components={portableTextComponents} />
+        </div>
+      </article>
 
-            {/* Blog Grid with Sidebar */}
-            <div className="mt-12 grid gap-8 lg:grid-cols-[1fr_350px]">
-              {/* Blog Grid */}
-              <div>
-                <div className="mb-6 flex items-center justify-between">
-                  <h2 className="text-2xl font-bold text-primary">
-                    {searchQuery
-                      ? `Search Results (${filteredPosts.length})`
-                      : selectedCategory !== "all"
-                        ? `${categories.find((c: any) => c.slug === selectedCategory)?.name} (${filteredPosts.length})`
-                        : `All Posts (${filteredPosts.length})`}
-                  </h2>
-                </div>
+      {/* Author Bio */}
+      <AuthorBio author={formattedPost.author} />
 
-                <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-                  {formattedPosts.map((post) => (
-                    <BlogCard key={post.id} post={post} />
-                  ))}
-                </div>
+      {/* Related Posts */}
+      {formattedRelatedPosts.length > 0 && <RelatedPosts posts={formattedRelatedPosts} />}
 
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                  />
-                )}
-              </div>
-
-              {/* Sidebar - Desktop Only */}
-              <div className="hidden lg:block">
-                <div className="sticky top-8">
-                  <BlogSidebar
-                    popularPosts={formattedPopularPosts}
-                    categories={formattedCategories}
-                    tags={tags}
-                  />
-                </div>
-              </div>
-            </div>
-          </>
-        )}
-      </div>
+      {/* Floating Elements */}
+      <ShareButtons
+        url={`${process.env.NEXT_PUBLIC_SITE_URL || ""}/blog/${post.slug}`}
+        title={post.title}
+      />
+      <BackToBlogButton />
     </div>
   );
+}
+
+// Helper to calculate reading time
+function calculateReadingTime(content: any[]): number {
+  if (!content) return 5;
+  const text = content
+    .filter((block) => block._type === "block")
+    .map((block) =>
+      block.children
+        .filter((child: any) => child._type === "span")
+        .map((child: any) => child.text)
+        .join("")
+    )
+    .join(" ");
+  const wordsPerMinute = 200;
+  const wordCount = text.trim().split(/\s+/).length;
+  return Math.ceil(wordCount / wordsPerMinute) || 5;
 }
