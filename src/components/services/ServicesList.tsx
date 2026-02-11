@@ -15,7 +15,7 @@ import {
   ArrowRight,
   Check,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/src/components/ui/button";
 
 import soundEquipment from "@/assets/sound-equipment.jpg";
 import stageLighting from "@/assets/stage-lighting.jpg";
