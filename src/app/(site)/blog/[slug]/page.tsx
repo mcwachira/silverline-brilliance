@@ -58,13 +58,11 @@ interface BlogPost {
 // Props
 // --------------------
 interface BlogPostPageProps {
-  params: Promise<{
-    slug: string;
-  }>;
+  params: Promise<{ slug: string }>;
 }
 
 // --------------------
-// Generate static params for all posts
+// Generate static params
 // --------------------
 export async function generateStaticParams() {
   const slugs = await getAllPostSlugs();
@@ -72,7 +70,7 @@ export async function generateStaticParams() {
 }
 
 // --------------------
-// Generate metadata for SEO
+// Generate Metadata
 // --------------------
 export async function generateMetadata({
   params,
@@ -80,9 +78,7 @@ export async function generateMetadata({
   const { slug } = await params;
   const post = await getPostBySlug(slug);
 
-  if (!post) {
-    return { title: "Post Not Found" };
-  }
+  if (!post) return { title: "Post Not Found" };
 
   const ogImage = post.ogImage?.asset?.url || post.mainImage?.asset?.url;
 
@@ -107,15 +103,13 @@ export async function generateMetadata({
 }
 
 // --------------------
-// Blog Post Page
+// BlogPost Page
 // --------------------
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const { slug } = await params;
   const post = await getPostBySlug(slug);
 
-  if (!post) {
-    notFound();
-  }
+  if (!post) notFound();
 
   // Related posts
   const categoryIds = post.categories?.map((cat: any) => cat._id) || [];
@@ -127,10 +121,10 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     status: post.status || "draft",
     id: post.id || post._id,
     title: post.title,
-    slug: { current: post.slug },
-    excerpt: post.excerpt,
-    coverImage: post.coverImage,
-    publishedAt: post.publishedAt,
+    slug: { current: post.slug }, // ✅ must be { current: string }
+    excerpt: post.excerpt || "",
+    coverImage: post.coverImage || "",
+    publishedAt: post.publishedAt || new Date().toISOString(),
     readingTime: calculateReadingTime(post.content),
     viewCount: post.viewCount || 0,
     category: post.category || { id: "", name: "Uncategorized", slug: "" },
@@ -138,8 +132,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
       id: post.author.id,
       name: post.author.name,
       role: post.author.role,
-      bio: post.author.bio,
-      avatar: post.author.avatar,
+      bio: post.author.bio || "",
+      avatar: post.author.avatar || "",
       social: post.author.social || {},
     },
     tags: post.tags || [],
@@ -153,9 +147,9 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     id: p._id,
     title: p.title,
     slug: { current: p.slug },
-    excerpt: p.excerpt,
+    excerpt: p.excerpt || "",
     coverImage: p.mainImage?.asset?.url || "",
-    publishedAt: p.publishedAt,
+    publishedAt: p.publishedAt || new Date().toISOString(),
     readingTime: 5,
     viewCount: p.viewCount || 0,
     category: p.categories?.[0] || { id: "", name: "Uncategorized", slug: "" },
@@ -175,36 +169,30 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero Section */}
       <BlogPostHero post={formattedPost} />
 
-      {/* Main Content */}
       <article className="prose prose-lg mx-auto max-w-3xl px-4 py-12">
-        <div className="article-content">
-          <PortableText value={post.content} components={portableTextComponents} />
-        </div>
+        <PortableText value={post.content} components={portableTextComponents} />
       </article>
 
-      {/* Author Bio */}
       <AuthorBio author={formattedPost.author} />
 
-      {/* Related Posts */}
       {formattedRelatedPosts.length > 0 && (
         <RelatedPosts posts={formattedRelatedPosts} />
       )}
 
-      {/* Floating Elements */}
       <ShareButtons
-        url={`${process.env.NEXT_PUBLIC_SITE_URL || ""}/blog/${post.slug}`}
+        url={`${process.env.NEXT_PUBLIC_SITE_URL || ""}/blog/${post.slug.current}`}
         title={post.title}
       />
+
       <BackToBlogButton />
     </div>
   );
 }
 
 // --------------------
-// Helper: Calculate reading time
+// Helper: Reading Time
 // --------------------
 function calculateReadingTime(content: any[]): number {
   if (!content) return 5;
