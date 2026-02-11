@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import AboutHero from "@/components/about/AboutHero";
-import PurposeSection from "@/components/about/PurposeSection";
-import ValuesSection from "@/components/about/ValueSection";
-import CompanyOverview from "@/components/about/CompanyOverview";
+import { Button } from "@/src/components/ui/button";
+import AboutHero from "@/src/components/about/AboutHero";
+import PurposeSection from "@/src/components/about/PurposeSection";
+import ValuesSection from "@/src/components/about/ValueSection";
+import CompanyOverview from "@/src/components/about/CompanyOverview";
 
 const AboutPage = () => {
   return (
