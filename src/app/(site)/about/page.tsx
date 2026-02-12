@@ -9,16 +9,18 @@ import CompanyOverview from "@/src/components/about/CompanyOverview";
 const AboutPage = () => {
   return (
     <>
-      <AboutHero />
+    <h1>About Page</h1>
+    
+      {/* <AboutHero />
 
       <CompanyOverview />
 
       <PurposeSection />
 
-      <ValuesSection />
+      <ValuesSection /> */}
 
       {/* CTA — static, no animation needed */}
-      <section className="py-20 gradient-primary">
+      {/* <section className="py-20 gradient-primary">
         <div className="container mx-auto px-4 text-center">
           <h2 className="font-heading font-bold text-3xl md:text-4xl mb-6">
             Ready to Work Together?
@@ -35,7 +37,7 @@ const AboutPage = () => {
   </Link>
 </Button>
         </div>
-      </section>
+      </section> */}
     </>
   );
 };
