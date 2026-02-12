@@ -28,9 +28,11 @@ const AboutPage = () => {
             professional audiovisual solutions.
           </p>
 
-          <Button variant="gold" size="xl" asChild>
-            <Link href="/contact">Get in Touch</Link>
-          </Button>
+    <Button variant="gold" size="xl" asChild>
+  <Link href="/contact" passHref>
+    Get in Touch
+  </Link>
+</Button>
         </div>
       </section>
     </>
