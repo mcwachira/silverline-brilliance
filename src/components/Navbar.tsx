@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Shield } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 
 const navLinks = [
@@ -21,7 +21,7 @@ const Navbar = () => {
   const [mounted, setMounted] = useState(false);
 
   const pathname = usePathname();
-  const searchParams = useSearchParams();
+  // const searchParams = useSearchParams();
 
   useEffect(() => {
     setMounted(true);
@@ -143,7 +143,7 @@ const Navbar = () => {
                   </Link>
                 </motion.div>
               ))}
-              
+
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -151,7 +151,10 @@ const Navbar = () => {
                 className="pt-4 border-t border-white/10 space-y-3"
               >
                 <Button variant="outline" className="w-full" asChild>
-                  <Link href="/admin/login" className="flex items-center justify-center gap-2">
+                  <Link
+                    href="/admin/login"
+                    className="flex items-center justify-center gap-2"
+                  >
                     <Shield className="w-4 h-4" />
                     Admin Login
                   </Link>
