@@ -1,4 +1,3 @@
-"use client";
 import Link from "next/link";
 import { Button } from "@/src/components/ui/button";
 import AboutHero from "@/src/components/about/AboutHero";
@@ -9,12 +8,11 @@ import CompanyOverview from "@/src/components/about/CompanyOverview";
 const AboutPage = () => {
   return (
     <>
-    <h1>About Page</h1>
-    
-     <AboutHero />
+      <h1>About Page</h1>
 
-       
-        <CompanyOverview />
+      <AboutHero />
+
+      <CompanyOverview />
 
       <PurposeSection />
 
@@ -32,11 +30,11 @@ const AboutPage = () => {
             professional audiovisual solutions.
           </p>
 
-    <Button variant="gold" size="xl" asChild>
-  <Link href="/contact" passHref>
-    Get in Touch
-  </Link>
-</Button>
+          <Button variant="gold" size="xl" asChild>
+            <Link href="/contact" passHref>
+              Get in Touch
+            </Link>
+          </Button>
         </div>
       </section>
     </>
