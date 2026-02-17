@@ -1,129 +1,193 @@
-"use client";
 
-import { useState } from "react";
-import { ChevronLeft, ChevronRight, Check } from "lucide-react";
-import { useBooking } from "./BookingContext";
-import PersonalInfoStep from "./steps/PersonalInfoStep";
-import EventInfoStep from "./steps/EventInfoStep";
-import ServicesStep from "./steps/ServicesStep";
-import AdditionalInfoStep from "./steps/AdditionalInfoStep";
-import ConfirmationSection from "./ConfirmationSection";
+'use client'
 
-export default function BookingForm() {
-  const [currentStep, setCurrentStep] = useState(1);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const { bookingData, updateBookingData } = useBooking();
+import { useCallback, useState, useTransition } from 'react'
+import { useForm, FormProvider } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
+import { Button } from '@/src/components/ui/button'
+import { Alert, AlertDescription } from '@/src/components/ui/alert'
+import { Card, CardContent } from '@/src/components/ui/card'
+import { BookingProgress } from './BookingProgress'
+import { BookingConfirmation } from './BookingConfirmation'
+import { StepPersonalInfo } from './steps/StepPersonalInfo'
+import { StepEventInfo } from './steps/StepEventInfo'
+import { StepServices } from './steps/StepServices'
+import { StepAdditional } from './steps/StepAdditional'
+import { submitBooking } from '@/src/app/(site)/booking/actions'
+import { bookingSchema, STEP_FIELDS } from '@/src/lib/booking/schema'
+import type { BookingFormValues } from '@/src/lib/booking/schema'
+import { TOTAL_STEPS } from '@/src/lib/booking/constants'
 
-  const totalSteps = 4;
-  const progressPercentage = (currentStep / totalSteps) * 100;
+const STEP_COMPONENTS = [StepPersonalInfo, StepEventInfo, StepServices, StepAdditional]
 
-  const nextStep = () => {
-    if (currentStep < totalSteps) {
-      setCurrentStep(currentStep + 1);
+export function BookingForm() {
+  const [currentStep, setCurrentStep] = useState(1)
+  const [bookingReference, setBookingReference] = useState<string | null>(null)
+  const [serverError, setServerError] = useState<string | null>(null)
+  const [isPending, startTransition] = useTransition()
+
+  const methods = useForm<BookingFormValues>({
+    resolver: zodResolver(bookingSchema),
+    // Validate on blur (not on every keystroke) to avoid layout thrash
+    // but re-validate onChange after the first submit attempt
+    mode: 'onTouched',
+    defaultValues: {
+      preferredContact: 'email',
+      expectedAttendees: 50,
+      selectedServices: [],
+      company: '',
+      eventTypeOther: '',
+      venueAddress: '',
+      specialRequirements: '',
+      budgetRange: '',
+      howHeard: '',
+      eventEndTime: '',
+    },
+  })
+
+  const {
+    handleSubmit,
+    trigger,
+    setError,
+    formState: { isSubmitting },
+  } = methods
+
+  const isLoading = isSubmitting || isPending
+
+  // ── Step Navigation ──────────────────────────────────────────
+  const goToNext = useCallback(async () => {
+    setServerError(null)
+    // Only validate fields that belong to the current step
+    const fieldsToValidate = STEP_FIELDS[currentStep]
+    const isStepValid = await trigger(fieldsToValidate)
+    if (isStepValid && currentStep < TOTAL_STEPS) {
+      setCurrentStep((s) => s + 1)
+      // Scroll to top of form on step change (important on mobile)
+      document
+        .getElementById('booking-form-top')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
-  };
+  }, [currentStep, trigger])
 
-  const prevStep = () => {
+  const goToPrev = useCallback(() => {
+    setServerError(null)
     if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
+      setCurrentStep((s) => s - 1)
+      document
+        .getElementById('booking-form-top')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
-  };
+  }, [currentStep])
 
-  const handleSubmit = async () => {
-    // Here you would typically send the data to your backend
-    console.log("Booking submitted:", bookingData);
-    setIsSubmitted(true);
-  };
+  // ── Form Submit ──────────────────────────────────────────────
+  const onSubmit = useCallback((data: BookingFormValues) => {
+    setServerError(null)
+    startTransition(async () => {
+      const result = await submitBooking(data)
 
-  if (isSubmitted) {
-    return <ConfirmationSection bookingData={bookingData} />;
+      if (result.success) {
+        setBookingReference(result.bookingReference)
+        return
+      }
+
+      // Map field-level server errors back into RHF
+      if (result.fieldErrors) {
+        Object.entries(result.fieldErrors).forEach(([field, messages]) => {
+          if (messages?.[0]) {
+            setError(field as keyof BookingFormValues, {
+              type: 'server',
+              message: messages[0],
+            })
+          }
+        })
+      }
+
+      setServerError(result.error)
+    })
+  }, [setError])
+
+  // ── Success State ────────────────────────────────────────────
+  if (bookingReference) {
+    return <BookingConfirmation bookingReference={bookingReference} />
   }
 
+  const CurrentStepComponent = STEP_COMPONENTS[currentStep - 1]
+
   return (
-    <div className="bg-card rounded-2xl shadow-xl p-8">
-      {/* Progress Bar */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold text-foreground">
-            {currentStep === 1 && "Your Details"}
-            {currentStep === 2 && "Event Details"}
-            {currentStep === 3 && "Select Services"}
-            {currentStep === 4 && "Additional Details"}
-          </h2>
-          <span className="text-sm font-medium text-muted-foreground">
-            Step {currentStep}/{totalSteps}
-          </span>
-        </div>
-        
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <div 
-            className="bg-gradient-to-r from-purple-600 to-purple-500 h-2 rounded-full transition-all duration-300"
-            style={{ width: `${progressPercentage}%` }}
-          />
-        </div>
-      </div>
+    <Card
+      className="border-border/50 shadow-xl"
+      id="booking-form-top"
+    >
+      <CardContent className="p-6 md:p-8 lg:p-10">
+        {/* Progress indicator */}
+        <BookingProgress currentStep={currentStep} />
 
-      {/* Form Steps */}
-      <div className="min-h-[500px]">
-        {currentStep === 1 && (
-          <PersonalInfoStep 
-            data={bookingData} 
-            updateData={updateBookingData} 
-          />
+        {/* Server-level error banner */}
+        {serverError && (
+          <Alert variant="destructive" className="mb-6" role="alert">
+            <AlertDescription>{serverError}</AlertDescription>
+          </Alert>
         )}
-        {currentStep === 2 && (
-          <EventInfoStep 
-            data={bookingData} 
-            updateData={updateBookingData} 
-          />
-        )}
-        {currentStep === 3 && (
-          <ServicesStep 
-            data={bookingData} 
-            updateData={updateBookingData} 
-          />
-        )}
-        {currentStep === 4 && (
-          <AdditionalInfoStep 
-            data={bookingData} 
-            updateData={updateBookingData} 
-          />
-        )}
-      </div>
 
-      {/* Navigation Buttons */}
-      <div className="flex justify-between mt-8 pt-6 border-t border-border">
-        <button
-          onClick={prevStep}
-          disabled={currentStep === 1}
-          className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all ${
-            currentStep === 1
-              ? "text-muted-foreground cursor-not-allowed"
-              : "border-2 border-purple-600 text-purple-600 hover:bg-purple-50"
-          }`}
-        >
-          <ChevronLeft className="h-4 w-4" />
-          Previous
-        </button>
-
-        {currentStep < totalSteps ? (
-          <button
-            onClick={nextStep}
-            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-500 text-white rounded-lg font-medium hover:from-purple-700 hover:to-purple-600 transition-all shadow-lg"
+        {/* Step content */}
+        <FormProvider {...methods}>
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            noValidate
+            aria-label={`Booking form — step ${currentStep} of ${TOTAL_STEPS}`}
           >
-            Next
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        ) : (
-          <button
-            onClick={handleSubmit}
-            className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-yellow-500 to-yellow-400 text-foreground rounded-lg font-medium hover:from-yellow-600 hover:to-yellow-500 transition-all shadow-lg"
-          >
-            <Check className="h-4 w-4" />
-            Submit Booking Request
-          </button>
-        )}
-      </div>
-    </div>
-  );
+            {/* Min-height prevents layout shift between steps */}
+            <div className="min-h-[420px] sm:min-h-[460px]">
+              <CurrentStepComponent />
+            </div>
+
+            {/* Navigation */}
+            <div className="mt-8 flex items-center justify-between border-t border-border pt-6">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={goToPrev}
+                disabled={currentStep === 1 || isLoading}
+                aria-label="Go to previous step"
+                className="gap-2"
+              >
+                <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                <span className="hidden sm:inline">Previous</span>
+              </Button>
+
+              {currentStep < TOTAL_STEPS ? (
+                <Button
+                  type="button"
+                  onClick={goToNext}
+                  disabled={isLoading}
+                  aria-label="Go to next step"
+                  className="gap-2 bg-amber-500 text-slate-950 hover:bg-amber-400 focus-visible:ring-amber-500"
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                </Button>
+              ) : (
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  aria-label={isLoading ? 'Submitting your booking request' : 'Submit booking request'}
+                  className="min-w-[180px] gap-2 bg-amber-500 text-slate-950 hover:bg-amber-400 focus-visible:ring-amber-500"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                      Submitting...
+                    </>
+                  ) : (
+                    'Submit Booking Request'
+                  )}
+                </Button>
+              )}
+            </div>
+          </form>
+        </FormProvider>
+      </CardContent>
+    </Card>
+  )
 }

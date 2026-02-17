@@ -1,318 +1,363 @@
-"use client";
 
-import { useState, useEffect } from "react";
-import { X, Send, User, Mail, Phone, Calendar, MessageSquare, Zap } from "lucide-react";
+'use client'
+
+import { useEffect, useRef, useTransition } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { X, Zap, Loader2, CheckCircle2 } from 'lucide-react'
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from '@/src/components/ui/form'
+import { Input } from '@/src/components/ui/input'
+import { Textarea } from '@/src/components/ui/textarea'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/src/components/ui/select'
+import { Button } from '@/src/components/ui/button'
+import { quickQuoteSchema } from '@/src/lib/booking/schema'
+import type { QuickQuoteValues } from '@/src/lib/booking/schema'
+import { SERVICES } from '@/src/lib/booking/constants'
+import { submitQuoteRequest } from '@/src/app/(site)/booking/actions'
+import { cn } from '@/src/lib/utils'
 
 interface QuickQuoteModalProps {
-  isOpen?: boolean;
-  onClose?: () => void;
+  isOpen: boolean
+  onClose: () => void
 }
 
-interface QuickQuoteData {
-  name: string;
-  email: string;
-  phone: string;
-  service: string;
-  date: string;
-  message: string;
-}
+const MIN_DATE = new Date().toISOString().split('T')[0]
 
-export default function QuickQuoteModal() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [formData, setFormData] = useState<QuickQuoteData>({
-    name: "",
-    email: "",
-    phone: "",
-    service: "",
-    date: "",
-    message: "",
-  });
+export function QuickQuoteModal({ isOpen, onClose }: QuickQuoteModalProps) {
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const [isPending, startTransition] = useTransition()
 
-  const services = [
-    { value: "live-streaming", label: "Live Streaming" },
-    { value: "event-coverage", label: "Event Coverage" },
-    { value: "photography", label: "Photography" },
-    { value: "corporate-video", label: "Corporate Video" },
-    { value: "sound-setup", label: "Sound Setup" },
-    { value: "lighting", label: "Stage & Lighting" },
-    { value: "other", label: "Other" },
-  ];
+  const form = useForm<QuickQuoteValues>({
+    resolver: zodResolver(quickQuoteSchema),
+    mode: 'onTouched',
+    defaultValues: {
+      name: '',
+      email: '',
+      phone: '',
+      service: '',
+      eventDate: '',
+      message: '',
+    },
+  })
 
-  const getMinDate = () => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
-  };
+  const { formState: { isSubmitSuccessful, isSubmitting } } = form
+  const isLoading = isSubmitting || isPending
 
-  const handleInputChange = (field: keyof QuickQuoteData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    console.log("Quick quote submitted:", formData);
-    setIsSubmitted(true);
-    setIsSubmitting(false);
-  };
-
-  const resetForm = () => {
-    setFormData({
-      name: "",
-      email: "",
-      phone: "",
-      service: "",
-      date: "",
-      message: "",
-    });
-    setIsSubmitted(false);
-  };
-
-  const closeModal = () => {
-    setIsOpen(false);
-    resetForm();
-  };
-
-  // Close modal on escape key
+  // ── Accessibility: focus trap, escape key, body scroll lock ──
   useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        closeModal();
+    if (!isOpen) return
+
+    const previouslyFocused = document.activeElement as HTMLElement
+    // Focus the dialog on open
+    dialogRef.current?.focus()
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        handleClose()
       }
-    };
-
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [isOpen]);
-
-  // Prevent body scroll when modal is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
+      // Basic focus trap
+      if (e.key === 'Tab' && dialogRef.current) {
+        const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        )
+        const first = focusable[0]
+        const last = focusable[focusable.length - 1]
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault()
+          last.focus()
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault()
+          first.focus()
+        }
+      }
     }
 
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isOpen]);
+    document.addEventListener('keydown', handleKeyDown)
+    document.body.style.overflow = 'hidden'
 
-  if (!isOpen) {
-    return (
-      <>
-        {/* Floating Quick Quote Button */}
-        <button
-          onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 z-40 flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-yellow-500 to-yellow-400 text-foreground rounded-full shadow-lg hover:from-yellow-600 hover:to-yellow-500 transition-all duration-300 hover:scale-105 group"
-        >
-          <Zap className="h-5 w-5" />
-          <span className="font-medium">Quick Quote</span>
-          <div className="absolute inset-0 rounded-full bg-yellow-400 opacity-0 group-hover:opacity-20 animate-ping" />
-        </button>
-      </>
-    );
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = ''
+      previouslyFocused?.focus()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen])
+
+  function handleClose() {
+    onClose()
+    // Reset form after close animation (150ms)
+    setTimeout(() => form.reset(), 150)
   }
+
+  function onSubmit(data: QuickQuoteValues) {
+    startTransition(async () => {
+      const result = await submitQuoteRequest(data)
+      if (!result.success) {
+        form.setError('root', { message: result.error })
+      }
+      // On success, isSubmitSuccessful = true → shows success state
+    })
+  }
+
+  if (!isOpen) return null
 
   return (
     <>
-      {/* Floating Quick Quote Button (hidden when modal is open) */}
-      <div className="fixed bottom-6 right-6 z-40 opacity-0 pointer-events-none">
-        <button className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-yellow-500 to-yellow-400 text-foreground rounded-full shadow-lg">
-          <Zap className="h-5 w-5" />
-          <span className="font-medium">Quick Quote</span>
-        </button>
-      </div>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm"
+        aria-hidden="true"
+        onClick={handleClose}
+      />
 
-      {/* Modal Overlay */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-        {/* Modal */}
-        <div className="bg-card rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-          {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-border">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
-                <Zap className="h-5 w-5 text-yellow-600" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-foreground">Quick Quote</h3>
-                <p className="text-sm text-muted-foreground">Get a fast estimate</p>
+      {/* Dialog */}
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="quick-quote-title"
+        tabIndex={-1}
+        className={cn(
+          'fixed z-50 rounded-2xl border border-border bg-card shadow-2xl',
+          'bottom-4 left-4 right-4',
+          'sm:bottom-6 sm:left-auto sm:right-6 sm:w-[420px]',
+          'max-h-[90dvh] overflow-y-auto outline-none',
+          'focus-visible:ring-0', // dialog gets focused, not styled as button
+        )}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-border p-5">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500/15">
+              <Zap className="h-4 w-4 text-amber-500" aria-hidden="true" />
+            </div>
+            <div>
+              <h3 id="quick-quote-title" className="text-base font-bold text-foreground">
+                Quick Quote
+              </h3>
+              <p className="text-xs text-muted-foreground">We'll respond within 24 hours</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleClose}
+            aria-label="Close quick quote dialog"
+            className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <X className="h-5 w-5" aria-hidden="true" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-5">
+          {isSubmitSuccessful ? (
+            // ── Success state ──────────────────────────────────
+            <div className="flex flex-col items-center py-6 text-center">
+              <CheckCircle2 className="mb-3 h-12 w-12 text-green-500" aria-hidden="true" />
+              <h4 className="mb-1 text-lg font-bold text-foreground">Quote Request Sent!</h4>
+              <p className="mb-6 text-sm text-muted-foreground">
+                We'll review your request and reach out within 24 hours.
+              </p>
+              <div className="flex w-full gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => form.reset()}
+                >
+                  Send Another
+                </Button>
+                <Button
+                  type="button"
+                  className="flex-1 bg-amber-500 text-slate-950 hover:bg-amber-400"
+                  onClick={handleClose}
+                >
+                  Close
+                </Button>
               </div>
             </div>
-            <button
-              onClick={closeModal}
-              className="p-2 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
+          ) : (
+            // ── Form ──────────────────────────────────────────
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} noValidate className="space-y-3">
 
-          {/* Content */}
-          <div className="p-6">
-            {!isSubmitted ? (
-              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Root server error */}
+                {form.formState.errors.root && (
+                  <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive">
+                    {form.formState.errors.root.message}
+                  </p>
+                )}
+
                 {/* Name */}
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Name <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <input
-                      type="text"
-                      required
-                      value={formData.name}
-                      onChange={(e) => handleInputChange('name', e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all"
-                      placeholder="Your name"
-                    />
-                  </div>
-                </div>
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs">
+                        Name <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          type="text"
+                          placeholder="Your name"
+                          autoComplete="name"
+                          className="h-9 text-sm"
+                        />
+                      </FormControl>
+                      <FormMessage className="text-xs" />
+                    </FormItem>
+                  )}
+                />
 
-                {/* Email */}
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Email <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <input
-                      type="email"
-                      required
-                      value={formData.email}
-                      onChange={(e) => handleInputChange('email', e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all"
-                      placeholder="your@email.com"
-                    />
-                  </div>
-                </div>
-
-                {/* Phone */}
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Phone <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <input
-                      type="tel"
-                      required
-                      value={formData.phone}
-                      onChange={(e) => handleInputChange('phone', e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all"
-                      placeholder="+254 712 345 678"
-                    />
-                  </div>
+                {/* Email + Phone */}
+                <div className="grid grid-cols-2 gap-2">
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs">
+                          Email <span className="text-destructive">*</span>
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type="email"
+                            placeholder="you@email.com"
+                            inputMode="email"
+                            className="h-9 text-sm"
+                          />
+                        </FormControl>
+                        <FormMessage className="text-xs" />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs">
+                          Phone <span className="text-destructive">*</span>
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type="tel"
+                            placeholder="+254..."
+                            inputMode="tel"
+                            className="h-9 text-sm"
+                          />
+                        </FormControl>
+                        <FormMessage className="text-xs" />
+                      </FormItem>
+                    )}
+                  />
                 </div>
 
                 {/* Service */}
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Service Needed <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    required
-                    value={formData.service}
-                    onChange={(e) => handleInputChange('service', e.target.value)}
-                    className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all"
-                  >
-                    <option value="">Select a service</option>
-                    {services.map((service) => (
-                      <option key={service.value} value={service.value}>
-                        {service.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <FormField
+                  control={form.control}
+                  name="service"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs">Service needed</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value ?? ''}>
+                        <FormControl>
+                          <SelectTrigger className="h-9 text-sm">
+                            <SelectValue placeholder="Select a service" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {SERVICES.map((s) => (
+                            <SelectItem key={s.id} value={s.name} className="text-sm">
+                              {s.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage className="text-xs" />
+                    </FormItem>
+                  )}
+                />
 
-                {/* Date */}
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Preferred Date <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <input
-                      type="date"
-                      required
-                      min={getMinDate()}
-                      value={formData.date}
-                      onChange={(e) => handleInputChange('date', e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all"
-                    />
-                  </div>
-                </div>
+                {/* Preferred Date */}
+                <FormField
+                  control={form.control}
+                  name="eventDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs">Preferred date</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          type="date"
+                          min={MIN_DATE}
+                          className="h-9 text-sm"
+                        />
+                      </FormControl>
+                      <FormMessage className="text-xs" />
+                    </FormItem>
+                  )}
+                />
 
                 {/* Message */}
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Quick Message
-                  </label>
-                  <div className="relative">
-                    <MessageSquare className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <textarea
-                      value={formData.message}
-                      onChange={(e) => handleInputChange('message', e.target.value)}
-                      rows={3}
-                      className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all resize-none"
-                      placeholder="Tell us briefly about your event..."
-                    />
-                  </div>
-                </div>
+                <FormField
+                  control={form.control}
+                  name="message"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs">Quick message</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          {...field}
+                          placeholder="Tell us briefly about your event..."
+                          rows={2}
+                          className="resize-none text-sm"
+                          maxLength={500}
+                        />
+                      </FormControl>
+                      <FormMessage className="text-xs" />
+                    </FormItem>
+                  )}
+                />
 
-                {/* Submit Button */}
-                <button
+                {/* Submit */}
+                <Button
                   type="submit"
-                  disabled={isSubmitting}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-yellow-500 to-yellow-400 text-foreground rounded-lg font-medium hover:from-yellow-600 hover:to-yellow-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={isLoading}
+                  className="mt-1 w-full bg-amber-500 text-slate-950 hover:bg-amber-400 focus-visible:ring-amber-500 disabled:opacity-60"
                 >
-                  {isSubmitting ? (
+                  {isLoading ? (
                     <>
-                      <div className="w-4 h-4 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
                       Sending...
                     </>
                   ) : (
-                    <>
-                      <Send className="h-4 w-4" />
-                      Request Quote
-                    </>
+                    'Request Quote'
                   )}
-                </button>
+                </Button>
               </form>
-            ) : (
-              /* Success State */
-              <div className="text-center py-8">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Send className="h-8 w-8 text-green-600" />
-                </div>
-                <h4 className="text-xl font-bold text-foreground mb-2">Quote Request Sent!</h4>
-                <p className="text-muted-foreground mb-6">
-                  We'll get back to you within 24 hours with a quick estimate.
-                </p>
-                <div className="flex gap-3">
-                  <button
-                    onClick={resetForm}
-                    className="flex-1 px-4 py-2 border border-border text-foreground rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    Send Another
-                  </button>
-                  <button
-                    onClick={closeModal}
-                    className="flex-1 px-4 py-2 bg-yellow-500 text-foreground rounded-lg hover:bg-yellow-600 transition-colors"
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+            </Form>
+          )}
         </div>
       </div>
     </>
-  );
+  )
 }
