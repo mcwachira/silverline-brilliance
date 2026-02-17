@@ -1,157 +1,136 @@
-import { Metadata } from "next";
-import { notFound } from "next/navigation";
-import { PortableText } from "@portabletext/react";
-import BlogPostHero from "@/src/components/blog/BlogPostHero";
-import AuthorBio from "@/src/components/blog/AuthorBio";
-import RelatedPosts from "@/src/components/blog/RelatedPosts";
-import ShareButtons from "@/src/components/blog/ShareButtons";
-import BackToBlogButton from "@/src/components/blog/BackToBlogButton";
-import { getPostBySlug, getAllPostSlugs, getRelatedPosts } from "@/src/sanity/lib/queries";
-import { portableTextComponents } from "@/src/sanity/lib/portableText";
-import { BlogPost } from "@/types/blog";
+import {Metadata} from "next";
+import {Suspense} from 'react';
+import { getAllPosts, getAllCategories } from '@/src/sanity/lib/queries';
+import { BlogHero } from '@/src/components/blog/BlogHero';
+import { BlogFilters } from '@/src/components/blog/BlogFilters';
+import { BlogGrid } from '@/src/components/blog/BlogGrid';
+import { BlogSidebar } from '@/src/components/blog/BlogSidebar';
+import { BlogPagination } from '@/src/components/blog/BlogPagination';
+import { NoResults } from '@/src/components/blog/NoResult';
+import { BlogGridSkeleton, SidebarSkeleton } from '@/src/components/blog/Skeletons';
+import { filterPosts, paginatePosts, getPaginationInfo, extractTags, countByCategory } from '@/src/lib/blog/utils';
+import { BLOG_CONFIG } from '@/src/lib/blog/constants';
+import { BlogPost } from '@/src/lib/blog/types';
 
-interface BlogPostPageProps {
-  params: Promise<{ slug: string }>;
+export const metadata:Metadata = {
+    title: 'Blog | Silverline Technologies',
+  description: 'Latest news, insights, and updates from Silverline Technologies. Explore our articles on technology, innovation, and industry trends.',
+  openGraph: {
+    title: 'Blog | Silverline Technologies',
+    description: 'Latest news, insights, and updates from Silverline Technologies',
+    type: 'website',
+  },
 }
 
-// Generate static params for SSG
-export async function generateStaticParams() {
-  const slugs = await getAllPostSlugs();
-  return slugs.map((slug: string) => ({ slug }));
+interface BlogPageProps {
+  searchParams: Promise<{
+    category?: string;
+    sort?: 'newest' | 'oldest' | 'az';
+    page?: string;
+    search?: string;
+  }>;
 }
 
-// Generate metadata for SEO
-export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
-  const { slug } = await params;
-  const post = await getPostBySlug(slug);
+export default async function BlogPage({searchParams}: BlogPageProps) {
 
-  if (!post) {
-    return { title: "Post Not Found" };
-  }
+  const params = await searchParams;
+  const currentPage = Number(params.page) || 1;
+  const category = params.category || "all";
+  const sort = params.sort || 'newest';
+  const search = params.search || '';
 
-  const ogImage = post.ogImage?.asset?.url || post.coverImage?.asset?.url;
 
-  return {
-    title: post.metaTitle || post.title,
-    description: post.metaDescription || post.excerpt,
-    openGraph: {
-      title: post.metaTitle || post.title,
-      description: post.metaDescription || post.excerpt,
-      type: "article",
-      publishedTime: post.publishedAt,
-      authors: [post.author.name],
-      images: ogImage ? [{ url: ogImage }] : [],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: post.metaTitle || post.title,
-      description: post.metaDescription || post.excerpt,
-      images: ogImage ? [ogImage] : [],
-    },
-  };
-}
+  // Fetch data once on server
+  const [allPosts, categories] = await Promise.all([
+    getAllPosts(),
+    getAllCategories(),
+  ]);
 
-export default async function BlogPostPage({ params }: BlogPostPageProps) {
-  const { slug } = await params;
-  const post = await getPostBySlug(slug);
+   // Apply filters server-side
+  const filteredPosts = filterPosts(allPosts as BlogPost[], {
+    category: category !== 'all' ? category : undefined,
+    sort,
+    search,
+  });
 
-  if (!post) notFound();
+  const paginatedPosts =  paginatePosts(filteredPosts, currentPage, BLOG_CONFIG.POSTS_PER_PAGE);
 
-  // Fetch related posts
-  const categoryIds = post.categories?.map((cat: any) => cat._id) || [];
-  const relatedPostsRaw = await getRelatedPosts(post._id, categoryIds, 3);
+  const paginationInfo = getPaginationInfo(filteredPosts.length, currentPage, BLOG_CONFIG.POSTS_PER_PAGE);
 
-  // Format main post
-  const formattedPost: BlogPost = {
-    _id: post._id,
-    status: post.status || "draft",
-    title: post.title,
-    slug: { current: post.slug },
-    excerpt: post.excerpt,
-    coverImage: post.coverImage || "",
-    publishedAt: post.publishedAt,
-    readingTime: calculateReadingTime(post.content),
-    viewCount: post.viewCount || 0,
-    category: {
-      name: post.category?.name || "Uncategorized",
-      slug: post.category?.slug || "uncategorized",
-    },
-    author: {
-      name: post.author.name,
-      image: post.author.avatar || "",
-    },
-    tags: post.tags || [],
-    featured: post.featured || false,
-    metaTitle: post.metaTitle || "",
-    metaDescription: post.metaDescription || "",
-  };
 
-  // Format related posts
-  const formattedRelatedPosts: BlogPost[] = relatedPostsRaw.map((p: any) => ({
-    _id: p._id,
-    status: p.status || "draft",
-    title: p.title,
-    slug: { current: p.slug },
-    excerpt: p.excerpt,
-    coverImage: p.mainImage?.asset?.url || "",
-    publishedAt: p.publishedAt,
-    readingTime: 5,
-    viewCount: 0,
-    category: {
-      name: p.categories?.[0]?.name || "Uncategorized",
-      slug: p.categories?.[0]?.slug || "uncategorized",
-    },
-    author: {
-      name: p.author.name,
-      image: p.author.image?.asset?.url || "",
-    },
-    tags: [],
-    featured: false,
-    metaTitle: "",
-    metaDescription: "",
-  }));
+  // Sidebar data
+  const tags = extractTags(allPosts as BlogPost[], BLOG_CONFIG.TAGS_DISPLAY_LIMIT);
+  const categoryCounts = countByCategory(allPosts as BlogPost[]);
+  const recentPosts = allPosts.slice(0, BLOG_CONFIG.RECENT_POSTS_COUNT);
 
-  return (
+
+  // Featured post (first post on page 1)
+  const featuredPost = currentPage === 1 && paginatedPosts.length > 0 ? paginatedPosts[0] : null;
+  const gridPosts = currentPage === 1 ? paginatedPosts.slice(1) : paginatedPosts;
+
+   return (
     <div className="min-h-screen bg-background">
-      {/* Hero Section */}
-      <BlogPostHero post={formattedPost} />
+      <BlogHero />
 
-      {/* Main Content */}
-      <article className="prose prose-lg mx-auto max-w-3xl px-4 py-12">
-        <div className="article-content">
-          <PortableText value={post.content} components={portableTextComponents} />
-        </div>
-      </article>
-
-      {/* Author Bio */}
-      <AuthorBio author={formattedPost.author} />
-
-      {/* Related Posts */}
-      {formattedRelatedPosts.length > 0 && <RelatedPosts posts={formattedRelatedPosts} />}
-
-      {/* Floating Elements */}
-      <ShareButtons
-        url={`${process.env.NEXT_PUBLIC_SITE_URL || ""}/blog/${post.slug}`}
-        title={post.title}
+      <BlogFilters
+        categories={categories}
+        activeCategory={category}
+        activeSortOrder={sort}
       />
-      <BackToBlogButton />
+
+      {filteredPosts.length === 0 ? (
+        <NoResults searchQuery={search} />
+      ) : (
+        <>
+          {/* Featured Post - Only on first page */}
+          {featuredPost && (
+            <Suspense fallback={<BlogGridSkeleton count={1} featured />}>
+              <section className="container mx-auto px-4 py-8 md:py-12">
+                <BlogGrid posts={[featuredPost]} variant="featured" />
+              </section>
+            </Suspense>
+          )}
+
+          {/* Blog Grid with Sidebar */}
+          <section className="container mx-auto px-4 py-8 md:py-16">
+            {/* Section Heading */}
+            <div className="mb-8 md:mb-12 text-center">
+              <h2 className="font-heading font-bold text-2xl md:text-3xl text-gradient-gold uppercase tracking-wider mb-4">
+                Latest Articles
+              </h2>
+              <div className="w-16 h-1 bg-accent mx-auto" />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 md:gap-8">
+              {/* Posts Grid */}
+              <div className="lg:col-span-3 space-y-8">
+                <Suspense fallback={<BlogGridSkeleton count={BLOG_CONFIG.POSTS_PER_PAGE} />}>
+                  {gridPosts.length > 0 ? (
+                    <BlogGrid posts={gridPosts} />
+                  ) : (
+                    <p className="text-muted-foreground text-center py-12">
+                      No more articles on this page.
+                    </p>
+                  )}
+                </Suspense>
+
+                <BlogPagination paginationInfo={paginationInfo} />
+              </div>
+
+              {/* Sidebar */}
+              <Suspense fallback={<SidebarSkeleton />}>
+                <BlogSidebar
+                  recentPosts={recentPosts as BlogPost[]}
+                  categories={categoryCounts}
+                  tags={tags}
+                />
+              </Suspense>
+            </div>
+          </section>
+        </>
+      )}
     </div>
   );
 }
 
-// Helper to calculate reading time
-function calculateReadingTime(content: any[]): number {
-  if (!content) return 5;
-  const text = content
-    .filter((block) => block._type === "block")
-    .map((block) =>
-      block.children
-        .filter((child: any) => child._type === "span")
-        .map((child: any) => child.text)
-        .join("")
-    )
-    .join(" ");
-  const wordsPerMinute = 200;
-  const wordCount = text.trim().split(/\s+/).length;
-  return Math.ceil(wordCount / wordsPerMinute) || 5;
-}
+
