@@ -2,13 +2,13 @@
 
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import BlogHero from "./BlogHero";
+import {BlogHero} from "./BlogHero";
 import BlogCategoryFilter, { type SortOrder } from "./BlogCategoryFilter";
 import BlogFeaturedPost from "./BlogFeaturedPost";
-import BlogCard from "./BlogCard";
-import BlogSidebar from "./BlogSidebar";
-import BlogPagination from "./BlogPagination";
-import NewsletterForm from "../NewsletterForm";
+import {BlogCard} from "./BlogCard";
+import {BlogSidebar} from "./BlogSidebar";
+import {BlogPagination} from "./BlogPagination";
+import {NewsletterForm} from "../newsletter/NewsletterForm";
 
 interface BlogPageClientProps {
   posts: any[];
@@ -202,7 +202,7 @@ export default function BlogPageClient({ posts, categories }: BlogPageClientProp
         </>
       )}
 
-      {/* <NewsletterForm/> */}
+      <NewsletterForm/>
     </div>
   );
 }

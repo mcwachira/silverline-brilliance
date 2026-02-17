@@ -26,7 +26,7 @@ import { Input } from '@/src/components/ui/input'
 import { Button } from '@/src/components/ui/button'
 import { newsletterSchema } from '@/src/lib/newsletter/schema'
 import type { NewsletterFormValues } from '@/src/lib/newsletter/schema'
-import { subscribeToNewsletter } from '@/src/app/newsletter/actions'
+import { subscribeToNewsletter } from '@/src/app/(site)/newsletter/actions'
 import { cn } from '@/src/lib/utils'
 
 interface NewsletterFormProps {
