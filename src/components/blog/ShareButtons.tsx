@@ -1,104 +1,82 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { Facebook, Twitter, Linkedin, Link as LinkIcon, MessageCircle } from "lucide-react";
+import { useState } from 'react';
+import { Share2, Twitter, Linkedin, Facebook, Link as LinkIcon, Check } from 'lucide-react';
 
 interface ShareButtonsProps {
   url: string;
   title: string;
 }
 
-export default function ShareButtons({ url, title }: ShareButtonsProps) {
-  const [isVisible, setIsVisible] = useState(false);
+export function ShareButtons({ url, title }: ShareButtonsProps) {
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsVisible(window.scrollY > 300);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  const shareLinks = {
-    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
-    twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`,
-    linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
-    whatsapp: `https://wa.me/?text=${encodeURIComponent(title + " " + url)}`,
-  };
-
-  const copyLink = async () => {
+  const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error("Failed to copy:", err);
+      console.error('Failed to copy:', err);
     }
   };
 
-  if (!isVisible) return null;
+  const shareLinks = {
+    twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`,
+    linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+  };
 
   return (
-    <div className="fixed right-6 top-1/2 z-40 hidden -translate-y-1/2 flex-col gap-3 lg:flex">
-      {/* Facebook */}
-      <a
-        href={shareLinks.facebook}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="group flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-lg transition-all hover:scale-110 hover:bg-[#1877F2] hover:shadow-xl"
-        aria-label="Share on Facebook"
-      >
-        <Facebook className="h-5 w-5 text-[#1877F2] transition-colors group-hover:text-white" />
-      </a>
+    <section className="container mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto">
+        <div className="rounded-xl bg-card border border-border p-6 md:p-8">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <Share2 className="h-5 w-5 text-accent" />
+              <h3 className="text-lg font-semibold text-foreground">Share this article</h3>
+            </div>
 
-      {/* Twitter/X */}
-      <a
-        href={shareLinks.twitter}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="group flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-lg transition-all hover:scale-110 hover:bg-black hover:shadow-xl"
-        aria-label="Share on Twitter"
-      >
-        <Twitter className="h-5 w-5 text-black transition-colors group-hover:text-white" />
-      </a>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => window.open(shareLinks.twitter, '_blank')}
+                className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-muted text-foreground transition-all hover:bg-[#1DA1F2] hover:text-white"
+                aria-label="Share on Twitter"
+              >
+                <Twitter className="h-4 w-4" />
+              </button>
 
-      {/* LinkedIn */}
-      <a
-        href={shareLinks.linkedin}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="group flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-lg transition-all hover:scale-110 hover:bg-[#0A66C2] hover:shadow-xl"
-        aria-label="Share on LinkedIn"
-      >
-        <Linkedin className="h-5 w-5 text-[#0A66C2] transition-colors group-hover:text-white" />
-      </a>
+              <button
+                onClick={() => window.open(shareLinks.linkedin, '_blank')}
+                className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-muted text-foreground transition-all hover:bg-[#0077B5] hover:text-white"
+                aria-label="Share on LinkedIn"
+              >
+                <Linkedin className="h-4 w-4" />
+              </button>
 
-      {/* WhatsApp */}
-      <a
-        href={shareLinks.whatsapp}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="group flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-lg transition-all hover:scale-110 hover:bg-[#25D366] hover:shadow-xl"
-        aria-label="Share on WhatsApp"
-      >
-        <MessageCircle className="h-5 w-5 text-[#25D366] transition-colors group-hover:text-white" />
-      </a>
+              <button
+                onClick={() => window.open(shareLinks.facebook, '_blank')}
+                className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-muted text-foreground transition-all hover:bg-[#4267B2] hover:text-white"
+                aria-label="Share on Facebook"
+              >
+                <Facebook className="h-4 w-4" />
+              </button>
 
-      {/* Copy Link */}
-      <button
-        onClick={copyLink}
-        className="group relative flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-lg transition-all hover:scale-110 hover:bg-accent hover:shadow-xl"
-        aria-label="Copy link"
-      >
-        <LinkIcon className="h-5 w-5 text-accent transition-colors group-hover:text-accent-foreground" />
-        {copied && (
-          <span className="absolute -left-20 whitespace-nowrap rounded-lg bg-black px-3 py-1 text-xs text-white">
-            Copied!
-          </span>
-        )}
-      </button>
-    </div>
+              <button
+                onClick={handleCopyLink}
+                className={`inline-flex items-center justify-center h-10 w-10 rounded-full transition-all ${
+                  copied
+                    ? 'bg-green-500 text-white'
+                    : 'bg-muted text-foreground hover:bg-accent hover:text-accent-foreground'
+                }`}
+                aria-label="Copy link"
+              >
+                {copied ? <Check className="h-4 w-4" /> : <LinkIcon className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }

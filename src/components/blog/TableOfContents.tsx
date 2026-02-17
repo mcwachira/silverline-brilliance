@@ -1,18 +1,45 @@
-"use client";
 
-import { useEffect, useState } from "react";
-import { List } from "lucide-react";
-import { Heading } from "@/types/blog";
+'use client';
+
+import { useEffect, useState } from 'react';
+import { List } from 'lucide-react';
 
 interface TableOfContentsProps {
-  headings: Heading[];
+  content: any[];
 }
 
-export default function TableOfContents({ headings }: TableOfContentsProps) {
-  const [activeId, setActiveId] = useState<string>("");
-  const [isOpen, setIsOpen] = useState(false);
+interface Heading {
+  id: string;
+  text: string;
+  level: number;
+}
+
+export function TableOfContents({ content }: TableOfContentsProps) {
+  const [headings, setHeadings] = useState<Heading[]>([]);
+  const [activeId, setActiveId] = useState<string>('');
 
   useEffect(() => {
+    // Extract headings from content
+    const extractedHeadings: Heading[] = [];
+    
+    content.forEach((block, index) => {
+      if (block.style && (block.style === 'h2' || block.style === 'h3')) {
+        const text = block.children
+          ?.map((child: any) => child.text)
+          .join('') || '';
+        
+        const id = `heading-${index}`;
+        const level = block.style === 'h2' ? 2 : 3;
+        
+        extractedHeadings.push({ id, text, level });
+      }
+    });
+
+    setHeadings(extractedHeadings);
+  }, [content]);
+
+  useEffect(() => {
+    // Scroll spy functionality
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -21,119 +48,63 @@ export default function TableOfContents({ headings }: TableOfContentsProps) {
           }
         });
       },
-      { rootMargin: "-80px 0px -80% 0px" }
+      { rootMargin: '-20% 0% -35% 0%' }
     );
 
-    headings.forEach((heading) => {
-      const element = document.getElementById(heading.id);
-      if (element) observer.observe(element);
-    });
+    const headingElements = headings.map((h) => 
+      document.getElementById(h.id)
+    ).filter(Boolean);
 
-    return () => observer.disconnect();
+    headingElements.forEach((el) => el && observer.observe(el));
+
+    return () => {
+      headingElements.forEach((el) => el && observer.unobserve(el));
+    };
   }, [headings]);
+
+  if (headings.length === 0) return null;
 
   const scrollToHeading = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
       const offset = 100;
-      const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
+      const bodyRect = document.body.getBoundingClientRect().top;
+      const elementRect = element.getBoundingClientRect().top;
+      const elementPosition = elementRect - bodyRect;
+      const offsetPosition = elementPosition - offset;
+
       window.scrollTo({
-        top: elementPosition - offset,
-        behavior: "smooth",
+        top: offsetPosition,
+        behavior: 'smooth',
       });
-      setIsOpen(false);
     }
   };
 
-  if (headings.length === 0) return null;
-
   return (
-    <>
-      {/* Mobile Toggle Button */}
-      <div className="fixed bottom-24 right-4 z-40 lg:hidden">
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="flex h-14 w-14 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-2xl transition-all hover:scale-110"
-        >
-          <List className="h-6 w-6" />
-        </button>
+    <nav className="rounded-xl bg-card border border-border p-6" aria-label="Table of contents">
+      <div className="mb-4 flex items-center gap-2">
+        <List className="h-5 w-5 text-accent" />
+        <h3 className="text-lg font-bold text-foreground">Table of Contents</h3>
       </div>
 
-      {/* Mobile Drawer */}
-      {isOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setIsOpen(false)}
-          />
-          <div className="absolute bottom-0 left-0 right-0 max-h-[70vh] overflow-y-auto rounded-t-3xl bg-white p-6 shadow-2xl">
-            <h3 className="mb-4 text-xl font-bold text-primary">Table of Contents</h3>
-            <nav>
-              <ul className="space-y-2">
-                {headings.map((heading) => (
-                  <li key={heading.id}>
-                    <button
-                      onClick={() => scrollToHeading(heading.id)}
-                      className={`block w-full text-left transition-colors ${
-                        heading.level === 3 ? "pl-4" : ""
-                      } ${
-                        activeId === heading.id
-                          ? "font-semibold text-accent"
-                          : "text-gray-600 hover:text-accent"
-                      }`}
-                    >
-                      {heading.text}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-          </div>
-        </div>
-      )}
-
-      {/* Desktop Sidebar */}
-      <aside className="hidden lg:block">
-        <div className="sticky top-24 rounded-xl border border-border bg-white p-6 shadow-lg">
-          <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-primary">
-            <List className="h-5 w-5 text-accent" />
-            Table of Contents
-          </h3>
-          <nav>
-            <ul className="space-y-2">
-              {headings.map((heading) => (
-                <li key={heading.id}>
-                  <button
-                    onClick={() => scrollToHeading(heading.id)}
-                    className={`block w-full text-left text-sm transition-colors ${
-                      heading.level === 3 ? "pl-4" : ""
-                    } ${
-                      activeId === heading.id
-                        ? "font-semibold text-accent"
-                        : "text-gray-600 hover:text-accent"
-                    }`}
-                  >
-                    {heading.text}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </nav>
-
-          {/* Reading Progress */}
-          <div className="mt-6 pt-6 border-t border-border">
-            <p className="mb-2 text-xs font-semibold text-gray-500">READING PROGRESS</p>
-            <div className="h-2 overflow-hidden rounded-full bg-gray-200">
-              <div
-                className="h-full bg-accent transition-all duration-300"
-                style={{
-                  width: `${((headings.findIndex((h) => h.id === activeId) + 1) / headings.length) * 100}%`,
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      </aside>
-    </>
+      <ul className="space-y-2">
+        {headings.map((heading) => (
+          <li key={heading.id}>
+            <button
+              onClick={() => scrollToHeading(heading.id)}
+              className={`block w-full text-left text-sm transition-colors ${
+                heading.level === 3 ? 'pl-4' : ''
+              } ${
+                activeId === heading.id
+                  ? 'text-accent font-semibold'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {heading.text}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </nav>
   );
 }

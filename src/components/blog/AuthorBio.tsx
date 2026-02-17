@@ -1,80 +1,89 @@
-"use client";
 
-import Image from "next/image";
-import Link from "next/link";
-import { Twitter, Linkedin, Globe, ArrowRight } from "lucide-react";
-import { Author } from "@/types/blog";
+import Image from 'next/image';
+import Link from 'next/link';
+import { Twitter, Linkedin, Github, User } from 'lucide-react';
+import { Author } from '@/src/lib/blog/types';
 
 interface AuthorBioProps {
   author: Author;
 }
 
-export default function AuthorBio({ author }: AuthorBioProps) {
+export function AuthorBio({ author }: AuthorBioProps) {
   return (
-    <section className="mx-auto max-w-3xl px-4 py-12">
-      <div className="overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-primary/5 to-accent/5 p-8 shadow-xl">
-        <div className="flex flex-col gap-6 md:flex-row md:items-center">
+    <section className="container mx-auto px-4 py-8 md:py-12">
+      <div className="max-w-4xl mx-auto rounded-2xl bg-card border border-border p-6 md:p-8 shadow-sm">
+        <div className="flex flex-col sm:flex-row gap-4 md:gap-6">
           {/* Avatar */}
-          <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-full border-4 border-accent shadow-lg md:h-32 md:w-32">
-            <Image
-              src={author.avatar}
-              alt={author.name}
-              fill
-              className="object-cover"
-            />
+          <div className="flex-shrink-0">
+            {author.avatar ? (
+              <div className="relative h-20 w-20 md:h-24 md:w-24 overflow-hidden rounded-full border-4 border-accent">
+                <Image
+                  src={author.avatar}
+                  alt={author.name}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+            ) : (
+              <div className="h-20 w-20 md:h-24 md:w-24 rounded-full bg-muted flex items-center justify-center border-4 border-accent">
+                <User className="h-10 w-10 md:h-12 md:w-12 text-muted-foreground" />
+              </div>
+            )}
           </div>
 
-          {/* Info */}
+          {/* Bio Content */}
           <div className="flex-1">
-            <h3 className="mb-1 text-2xl font-bold text-primary">{author.name}</h3>
-            <p className="mb-3 text-sm font-medium text-accent">{author.role}</p>
-            <p className="mb-4 text-gray-700">{author.bio}</p>
+            <h3 className="text-xl md:text-2xl font-bold text-foreground mb-1">
+              {author.name}
+            </h3>
+            <p className="text-sm md:text-base text-muted-foreground mb-3">
+              {author.role}
+            </p>
+            
+            {author.bio && (
+              <p className="text-sm md:text-base text-foreground/80 leading-relaxed mb-4">
+                {author.bio}
+              </p>
+            )}
 
-            {/* Social Links & More Articles */}
-            <div className="flex flex-wrap items-center gap-4">
-              {/* Social Links */}
+            {/* Social Links */}
+            {(author.social?.twitter || author.social?.linkedin || author.social?.github) && (
               <div className="flex items-center gap-3">
                 {author.social.twitter && (
-                  <a
+                  <Link
                     href={author.social.twitter}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-white transition-all hover:bg-accent hover:shadow-lg"
+                    className="inline-flex items-center justify-center h-9 w-9 rounded-full bg-muted text-foreground transition-all hover:bg-accent hover:text-accent-foreground"
+                    aria-label="Twitter"
                   >
                     <Twitter className="h-4 w-4" />
-                  </a>
+                  </Link>
                 )}
                 {author.social.linkedin && (
-                  <a
+                  <Link
                     href={author.social.linkedin}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-white transition-all hover:bg-accent hover:shadow-lg"
+                    className="inline-flex items-center justify-center h-9 w-9 rounded-full bg-muted text-foreground transition-all hover:bg-accent hover:text-accent-foreground"
+                    aria-label="LinkedIn"
                   >
                     <Linkedin className="h-4 w-4" />
-                  </a>
+                  </Link>
                 )}
-                {author.social.website && (
-                  <a
-                    href={author.social.website}
+                {author.social.github && (
+                  <Link
+                    href={author.social.github}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-white transition-all hover:bg-accent hover:shadow-lg"
+                    className="inline-flex items-center justify-center h-9 w-9 rounded-full bg-muted text-foreground transition-all hover:bg-accent hover:text-accent-foreground"
+                    aria-label="GitHub"
                   >
-                    <Globe className="h-4 w-4" />
-                  </a>
+                    <Github className="h-4 w-4" />
+                  </Link>
                 )}
               </div>
-
-              {/* More by Author */}
-              <Link
-                href={`/blog?author=${author.id}`}
-                className="group flex items-center gap-2 rounded-full border-2 border-accent bg-white px-4 py-2 text-sm font-semibold text-primary transition-all hover:bg-accent hover:text-accent-foreground"
-              >
-                More by {author.name.split(" ")[0]}
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </Link>
-            </div>
+            )}
           </div>
         </div>
       </div>

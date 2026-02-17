@@ -1,6 +1,6 @@
 "use client";
 
-import BlogCard from "./BlogCard";
+import {BlogCard} from "./BlogCard";
 import { BlogPost } from "@/types/blog";
 
 interface RelatedPostsProps {
