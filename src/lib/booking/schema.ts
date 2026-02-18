@@ -105,6 +105,7 @@ export const bookingSchema = z
       .enum(['email', 'phone', 'whatsapp'], {
         message: 'Please select a contact method',
       })
+      .optional()
       .default('email'),
   })
   // ── Cross-field / Conditional Rules ───────────────────────
