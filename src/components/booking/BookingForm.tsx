@@ -6,6 +6,7 @@ import { useForm, FormProvider } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 import { Button } from '@/src/components/ui/button'
+import { toast } from 'sonner'
 import { Alert, AlertDescription } from '@/src/components/ui/alert'
 import { Card, CardContent } from '@/src/components/ui/card'
 import { BookingProgress } from './BookingProgress'
@@ -61,9 +62,14 @@ export function BookingForm() {
     // Only validate fields that belong to the current step
     const fieldsToValidate = STEP_FIELDS[currentStep]
     const isStepValid = await trigger(fieldsToValidate)
-    if (isStepValid && currentStep < TOTAL_STEPS) {
+
+       if (!isStepValid) {
+      toast.error('Please fill in all required fields correctly')
+      return
+    }
+
+     if (currentStep < TOTAL_STEPS) {
       setCurrentStep((s) => s + 1)
-      // Scroll to top of form on step change (important on mobile)
       document
         .getElementById('booking-form-top')
         ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -81,13 +87,27 @@ export function BookingForm() {
   }, [currentStep])
 
   // ── Form Submit ──────────────────────────────────────────────
-  const onSubmit = useCallback((data: BookingFormValues) => {
+const handleFinalSubmit = useCallback(async () => {
     setServerError(null)
+    
+    // Final validation of all steps
+    const allFieldsValid = await trigger()
+    if (!allFieldsValid) {
+      toast.error('Please review all steps and fill in required fields')
+      return
+    }
+
+    const formData = methods.getValues()
+    
     startTransition(async () => {
-      const result = await submitBooking(data)
+      const result = await submitBooking(formData)
 
       if (result.success) {
         setBookingReference(result.bookingReference)
+        toast.success('Booking request submitted successfully!', {
+          description: `Your reference: ${result.bookingReference}`,
+          duration: 5000,
+        })
         return
       }
 
@@ -104,8 +124,12 @@ export function BookingForm() {
       }
 
       setServerError(result.error)
+      toast.error('Submission failed', {
+        description: result.error,
+      })
     })
-  }, [setError])
+  }, [methods, setError, trigger])
+
 
   // ── Success State ────────────────────────────────────────────
   if (bookingReference) {
@@ -114,14 +138,26 @@ export function BookingForm() {
 
   const CurrentStepComponent = STEP_COMPONENTS[currentStep - 1]
 
-  return (
+   return (
     <Card
-      className="border-border/50 shadow-xl"
+      className="border-border/50 bg-slate-900/50 shadow-xl backdrop-blur-sm"
       id="booking-form-top"
     >
       <CardContent className="p-6 md:p-8 lg:p-10">
         {/* Progress indicator */}
-        <BookingProgress currentStep={currentStep} />
+        <div className="mb-6 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-white">
+            {currentStep === 1 && 'Your Details'}
+            {currentStep === 2 && 'Event Info'}
+            {currentStep === 3 && 'Services'}
+            {currentStep === 4 && 'Final Details'}
+          </h2>
+          <span className="text-sm font-medium text-purple-400">
+            Step {currentStep}/{TOTAL_STEPS}
+          </span>
+        </div>
+
+        <BookingProgress currentStep={currentStep} totalSteps={TOTAL_STEPS} />
 
         {/* Server-level error banner */}
         {serverError && (
@@ -130,63 +166,65 @@ export function BookingForm() {
           </Alert>
         )}
 
-        {/* Step content */}
+        {/* Step content — NOT wrapped in <form> to prevent auto-submit */}
         <FormProvider {...methods}>
-          <form
-            onSubmit={handleSubmit(onSubmit)}
-            noValidate
-            aria-label={`Booking form — step ${currentStep} of ${TOTAL_STEPS}`}
-          >
-            {/* Min-height prevents layout shift between steps */}
-            <div className="min-h-[420px] sm:min-h-[460px]">
-              <CurrentStepComponent />
-            </div>
+          <div className="min-h-[420px] sm:min-h-[460px]">
+            <CurrentStepComponent />
+          </div>
 
-            {/* Navigation */}
-            <div className="mt-8 flex items-center justify-between border-t border-border pt-6">
+          {/* Navigation — Submit button is type="button" to prevent auto-submit */}
+          <div className="mt-8 flex items-center justify-between border-t border-border pt-6">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={goToPrev}
+              disabled={currentStep === 1 || isLoading}
+              aria-label="Go to previous step"
+              className="gap-2 border-purple-500/30 text-purple-300 hover:bg-purple-500/10 hover:text-purple-200"
+            >
+              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+              <span className="hidden sm:inline">Previous</span>
+            </Button>
+
+            {currentStep < TOTAL_STEPS ? (
               <Button
                 type="button"
-                variant="outline"
-                onClick={goToPrev}
-                disabled={currentStep === 1 || isLoading}
-                aria-label="Go to previous step"
-                className="gap-2"
+                onClick={goToNext}
+                disabled={isLoading}
+                aria-label="Go to next step"
+                className="gap-2 bg-gradient-to-r from-purple-600 to-purple-500 text-white hover:from-purple-700 hover:to-purple-600 focus-visible:ring-purple-500"
               >
-                <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-                <span className="hidden sm:inline">Previous</span>
+                Next
+                <ChevronRight className="h-4 w-4" aria-hidden="true" />
               </Button>
-
-              {currentStep < TOTAL_STEPS ? (
-                <Button
-                  type="button"
-                  onClick={goToNext}
-                  disabled={isLoading}
-                  aria-label="Go to next step"
-                  className="gap-2 bg-amber-500 text-slate-950 hover:bg-amber-400 focus-visible:ring-amber-500"
-                >
-                  Next
-                  <ChevronRight className="h-4 w-4" aria-hidden="true" />
-                </Button>
-              ) : (
-                <Button
-                  type="submit"
-                  disabled={isLoading}
-                  aria-label={isLoading ? 'Submitting your booking request' : 'Submit booking request'}
-                  className="min-w-[180px] gap-2 bg-amber-500 text-slate-950 hover:bg-amber-400 focus-visible:ring-amber-500"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                      Submitting...
-                    </>
-                  ) : (
-                    'Submit Booking Request'
-                  )}
-                </Button>
-              )}
-            </div>
-          </form>
+            ) : (
+              <Button
+                type="button"
+                onClick={handleFinalSubmit}
+                disabled={isLoading}
+                aria-label={isLoading ? 'Submitting your booking request' : 'Submit booking request'}
+                className="min-w-[180px] gap-2 bg-gradient-to-r from-purple-600 to-purple-500 text-white hover:from-purple-700 hover:to-purple-600 focus-visible:ring-purple-500"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                    Submitting...
+                  </>
+                ) : (
+                  'Submit Booking Request'
+                )}
+              </Button>
+            )}
+          </div>
         </FormProvider>
+
+        {/* Privacy Note */}
+        <div className="mt-6 rounded-lg bg-purple-500/10 px-4 py-3">
+          <p className="text-xs text-purple-300">
+            <span className="font-semibold">Privacy Note:</span> Your information is kept
+            confidential and will only be used to respond to your booking request.
+          </p>
+        </div>
       </CardContent>
     </Card>
   )
