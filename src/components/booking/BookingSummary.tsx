@@ -1,203 +1,226 @@
 "use client";
 
-import { Phone, Mail, MessageCircle, Check, Star, Clock, Users, MapPin } from "lucide-react";
-import { BookingData, useBooking } from "./BookingContext";
+import { useFormContext, useWatch } from 'react-hook-form'
+import { Phone, Mail, MessageCircle, CheckCircle, Clock, Calendar, MapPin, Users, Star } from 'lucide-react'
+import { Card, CardContent, CardHeader } from '@/src/components/ui/card'
+import type { BookingFormValues } from '@/src/lib/booking/schema'
+import { SERVICES } from '@/src/lib/booking/constants'
+import { cn } from '@/src/lib/utils'
 
-const services = [
-  { id: "live-streaming", name: "Live Streaming", basePrice: 1500 },
-  { id: "event-coverage", name: "Event Coverage", basePrice: 2000 },
-  { id: "photography", name: "Photography", basePrice: 800 },
-  { id: "corporate-video", name: "Corporate Video Coverage", basePrice: 1200 },
-  { id: "graphic-design", name: "Graphic Design", basePrice: 500 },
-  { id: "sound-setup", name: "Sound Setup", basePrice: 1000 },
-  { id: "stage-lighting", name: "Stage & Lighting", basePrice: 1500 },
-  { id: "interpretation", name: "Interpretation Services & Equipment", basePrice: 800 },
-  { id: "social-media", name: "Social Media Content", basePrice: 600 },
-  { id: "video-conferencing", name: "Hybrid & Video Conferencing", basePrice: 1200 }
-];
+// Service pricing (update these to match your actual pricing)
+const SERVICE_PRICES: Record<string, number> = {
+  'live-streaming': 1500,
+  'event-coverage': 2000,
+  'photography': 800,
+  'corporate-video': 1200,
+  'graphic-design': 500,
+  'sound-setup': 1000,
+  'stage-lighting': 1500,
+  'interpretation': 800,
+  'social-media': 600,
+  'hybrid-conferencing': 1200,
+}
 
-export default function BookingSummary() {
-  const { bookingData } = useBooking();
+const CONTACT_OPTIONS = [
+  {
+    icon: Phone,
+    label: 'Call Us',
+    value: '+254 712 345 678',
+    href: 'tel:+254712345678',
+  },
+  {
+    icon: Mail,
+    label: 'Email Us',
+    value: 'bookings@silverlinebrilliance.com',
+    href: 'mailto:bookings@silverlinebrilliance.com',
+  },
+  {
+    icon: MessageCircle,
+    label: 'Live Chat',
+    value: 'Available 9AM-6PM',
+    href: '#',
+  },
+] as const
 
-  // Calculate estimated total
-  const calculateEstimate = () => {
-    const subtotal = bookingData.selectedServices.reduce((total: number, serviceId: string) => {
-      const service = services.find(s => s.id === serviceId);
-      return total + (service?.basePrice || 0);
-    }, 0);
+const TRUST_ITEMS = [
+  'Free initial consultation',
+  'Flexible payment options',
+  'Professional equipment',
+  'Experienced team',
+] as const
 
-    // Add complexity factor based on attendees
-    const complexityFactor = bookingData.expectedAttendees > 500 ? 1.5 : 
-                            bookingData.expectedAttendees > 200 ? 1.3 : 1;
-    
-    return Math.round(subtotal * complexityFactor);
-  };
+export function BookingSummary() {
+  const { control } = useFormContext<BookingFormValues>()
+  
+  // Watch form values for live updates
+  const eventName = useWatch({ control, name: 'eventName' })
+  const eventDate = useWatch({ control, name: 'eventDate' })
+  const eventStartTime = useWatch({ control, name: 'eventStartTime' })
+  const eventEndTime = useWatch({ control, name: 'eventEndTime' })
+  const venueName = useWatch({ control, name: 'venueName' })
+  const expectedAttendees = useWatch({ control, name: 'expectedAttendees' })
+  const selectedServices = useWatch({ control, name: 'selectedServices' }) ?? []
 
-  const estimate = calculateEstimate();
-  const tax = Math.round(estimate * 0.16); // 16% VAT
-  const total = estimate + tax;
+  // Calculate pricing
+  const subtotal = selectedServices.reduce((total, serviceId) => {
+    return total + (SERVICE_PRICES[serviceId] || 0)
+  }, 0)
+
+  const tax = Math.round(subtotal * 0.16) // 16% VAT
+  const total = subtotal + tax
+
+  const selectedServiceNames = SERVICES
+    .filter((s) => selectedServices.includes(s.id))
+    .map((s) => s.name)
+
+  const formattedDate = eventDate
+    ? new Date(eventDate).toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      })
+    : null
 
   return (
-    <div className="space-y-6">
-      {/* Summary Card */}
-      <div className="bg-card rounded-2xl shadow-xl p-6">
-        <h3 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
-          <Star className="h-5 w-5 text-yellow-500" />
-          Booking Summary
-        </h3>
+    <div className="space-y-5">
 
-        <div className="space-y-4">
+      {/* Booking Summary Card */}
+      <Card className="border-purple-500/20 bg-slate-900/70 backdrop-blur-sm">
+        <CardHeader className="border-b border-purple-500/20 pb-4">
+          <div className="flex items-center gap-2">
+            <Star className="h-5 w-5 text-yellow-400" aria-hidden="true" />
+            <h3 className="text-lg font-bold text-white">Booking Summary</h3>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4 pt-6">
+          
           {/* Event Name */}
-          {bookingData.eventName && (
+          {eventName && (
             <div>
-              <h4 className="font-semibold text-foreground text-lg">{bookingData.eventName}</h4>
+              <h4 className="text-base font-semibold text-white">{eventName}</h4>
             </div>
           )}
 
-          {/* Date and Time */}
-          {bookingData.eventDate && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Clock className="h-4 w-4" />
-              <span>
-                {new Date(bookingData.eventDate).toLocaleDateString('en-US', {
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })}
-                {bookingData.startTime && ` at ${bookingData.startTime}`}
-                {bookingData.endTime && ` - ${bookingData.endTime}`}
-              </span>
-            </div>
-          )}
+          {/* Event Details */}
+          <div className="space-y-2.5 text-sm">
+            {formattedDate && (
+              <div className="flex items-start gap-2.5 text-purple-200">
+                <Calendar className="mt-0.5 h-4 w-4 shrink-0 text-purple-400" aria-hidden="true" />
+                <span>{formattedDate}</span>
+              </div>
+            )}
 
-          {/* Location */}
-          {bookingData.venue && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <MapPin className="h-4 w-4" />
-              <span>{bookingData.venue}</span>
-            </div>
-          )}
+            {(eventStartTime || eventEndTime) && (
+              <div className="flex items-start gap-2.5 text-purple-200">
+                <Clock className="mt-0.5 h-4 w-4 shrink-0 text-purple-400" aria-hidden="true" />
+                <span>
+                  {eventStartTime || '—'} {eventEndTime && `– ${eventEndTime}`}
+                </span>
+              </div>
+            )}
 
-          {/* Attendees */}
-          {bookingData.expectedAttendees > 0 && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Users className="h-4 w-4" />
-              <span>{bookingData.expectedAttendees} expected attendees</span>
-            </div>
-          )}
+            {venueName && (
+              <div className="flex items-start gap-2.5 text-purple-200">
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-purple-400" aria-hidden="true" />
+                <span>{venueName}</span>
+              </div>
+            )}
+
+            {expectedAttendees > 0 && (
+              <div className="flex items-start gap-2.5 text-purple-200">
+                <Users className="mt-0.5 h-4 w-4 shrink-0 text-purple-400" aria-hidden="true" />
+                <span>{expectedAttendees.toLocaleString()} attendees</span>
+              </div>
+            )}
+          </div>
 
           {/* Selected Services */}
-          {bookingData.selectedServices.length > 0 && (
-            <div>
-              <h5 className="font-medium text-foreground mb-2">Selected Services:</h5>
-              <div className="flex flex-wrap gap-2">
-                {bookingData.selectedServices.map((serviceId: string) => {
-                  const service = services.find(s => s.id === serviceId);
-                  return service ? (
-                    <span
-                      key={serviceId}
-                      className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm"
-                    >
-                      {service.name}
-                    </span>
-                  ) : null;
-                })}
-              </div>
+          {selectedServiceNames.length > 0 && (
+            <div className="border-t border-purple-500/20 pt-4">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-purple-300">
+                Selected Services:
+              </p>
+              <ul className="space-y-1.5">
+                {selectedServiceNames.map((name) => (
+                  <li key={name} className="flex items-start gap-2 text-sm text-purple-100">
+                    <CheckCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-purple-400" aria-hidden="true" />
+                    {name}
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
 
-          {/* Price Estimate */}
-          {bookingData.selectedServices.length > 0 && (
-            <div className="border-t border-border pt-4 mt-4">
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Subtotal:</span>
-                  <span className="text-foreground">${estimate.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Tax (16%):</span>
-                  <span className="text-foreground">${tax.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-lg font-bold text-yellow-600">
-                  <span>Total Estimate:</span>
-                  <span>${total.toLocaleString()}</span>
-                </div>
+          {/* Pricing */}
+          {selectedServices.length > 0 && (
+            <div className="space-y-2 border-t border-purple-500/20 pt-4">
+              <div className="flex justify-between text-sm text-purple-200">
+                <span>Subtotal:</span>
+                <span>${subtotal.toLocaleString()}</span>
               </div>
-              <p className="text-xs text-muted-foreground mt-2 italic">
+              <div className="flex justify-between text-sm text-purple-200">
+                <span>Tax (16%):</span>
+                <span>${tax.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between border-t border-purple-500/20 pt-2 text-base font-bold">
+                <span className="text-yellow-400">Total Estimate:</span>
+                <span className="text-yellow-400">${total.toLocaleString()}</span>
+              </div>
+              <p className="text-xs italic text-purple-300">
                 Final quote will be provided after review
               </p>
             </div>
           )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* Contact Card */}
-      <div className="bg-card rounded-2xl shadow-xl p-6">
-        <h3 className="text-lg font-bold text-foreground mb-4">Need Help?</h3>
-        
-        <div className="space-y-3">
-          <a
-            href="tel:+254712345678"
-            className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-              <Phone className="h-5 w-5 text-purple-600" />
-            </div>
-            <div>
-              <p className="font-medium text-foreground">Call Us</p>
-              <p className="text-sm text-muted-foreground">+254 712 345 678</p>
-            </div>
-          </a>
+      {/* Need Help Card */}
+      <Card className="border-purple-500/20 bg-slate-900/70 backdrop-blur-sm">
+        <CardHeader className="pb-3">
+          <h3 className="text-base font-bold text-white">Need Help?</h3>
+        </CardHeader>
+        <CardContent className="space-y-2 pb-4">
+          {CONTACT_OPTIONS.map(({ icon: Icon, label, value, href }) => (
+            <a
+              key={label}
+              href={href}
+              className={cn(
+                'flex items-center gap-3 rounded-lg p-2.5 text-sm transition-colors',
+                href === '#' 
+                  ? 'cursor-default text-purple-300' 
+                  : 'text-purple-200 hover:bg-purple-500/10 hover:text-purple-100'
+              )}
+            >
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-purple-500/20">
+                <Icon className="h-4 w-4 text-purple-400" aria-hidden="true" />
+              </span>
+              <div className="min-w-0">
+                <p className="font-medium text-white">{label}</p>
+                <p className="truncate text-xs text-purple-300">{value}</p>
+              </div>
+            </a>
+          ))}
+        </CardContent>
+      </Card>
 
-          <a
-            href="mailto:bookings@silverlinebrilliance.com"
-            className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-              <Mail className="h-5 w-5 text-purple-600" />
-            </div>
-            <div>
-              <p className="font-medium text-foreground">Email Us</p>
-              <p className="text-sm text-muted-foreground">bookings@silverlinebrilliance.com</p>
-            </div>
-          </a>
+      {/* Why Choose Us Card */}
+      <Card className="border-purple-500/20 bg-gradient-to-br from-purple-500/10 to-purple-600/5 backdrop-blur-sm">
+        <CardHeader className="pb-3">
+          <h3 className="text-base font-bold text-white">Why Choose Us?</h3>
+        </CardHeader>
+        <CardContent className="pb-4">
+          <ul className="space-y-2" aria-label="Our guarantees">
+            {TRUST_ITEMS.map((item) => (
+              <li key={item} className="flex items-center gap-2 text-sm text-purple-100">
+                <CheckCircle className="h-4 w-4 shrink-0 text-purple-400" aria-hidden="true" />
+                {item}
+              </li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
 
-          <button className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors w-full">
-            <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-              <MessageCircle className="h-5 w-5 text-purple-600" />
-            </div>
-            <div className="text-left">
-              <p className="font-medium text-foreground">Live Chat</p>
-              <p className="text-sm text-muted-foreground">Available 9AM-6PM</p>
-            </div>
-          </button>
-        </div>
-      </div>
-
-      {/* Trust Signals */}
-      <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-2xl p-6 border border-purple-200">
-        <h3 className="text-lg font-bold text-purple-900 mb-4">Why Choose Us?</h3>
-        
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Check className="h-4 w-4 text-purple-600" />
-            <span className="text-sm text-purple-800">Free initial consultation</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Check className="h-4 w-4 text-purple-600" />
-            <span className="text-sm text-purple-800">Flexible payment options</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Check className="h-4 w-4 text-purple-600" />
-            <span className="text-sm text-purple-800">Professional equipment</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Check className="h-4 w-4 text-purple-600" />
-            <span className="text-sm text-purple-800">Experienced team</span>
-          </div>
-        </div>
-      </div>
     </div>
-  );
+  )
 }
