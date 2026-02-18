@@ -1,6 +1,7 @@
 import {createServerClient} from "@supabase/ssr";
 import {cookies} from 'next/headers'
 import type {Database} from './database.types'
+import { createClient } from '@supabase/supabase-js'
 
 
 export async function createServerSupabaseClient(){
@@ -28,4 +29,14 @@ export async function createServerSupabaseClient(){
             },
         }
     )
+}
+
+// Admin client using service role key (bypasses RLS — use carefully)
+export function createAdminClient() {
+//   const { createClient } = require('@supabase/supabase-js')
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
 }
