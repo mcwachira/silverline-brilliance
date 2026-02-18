@@ -1,170 +1,239 @@
+// lib/email/send.ts
 
-import 'server-only'
 import { Resend } from 'resend'
+import type { Booking, EmailEvent } from '@/types/types'
 
-if (!process.env.RESEND_API_KEY) {
-  throw new Error('Missing RESEND_API_KEY environment variable')
-}
+const resend = new Resend(process.env.RESEND_API_KEY!)
 
-if (!process.env.EMAIL_FROM) {
-  throw new Error('Missing EMAIL_FROM environment variable')
-}
+const FROM_EMAIL = process.env.EMAIL_FROM ?? 'noreply@yourdomain.com'
+const FROM_NAME = process.env.EMAIL_FROM_NAME ?? 'Studio Admin'
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'admin@yourdomain.com'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// ============================================================
+// HTML EMAIL TEMPLATES
+// ============================================================
 
-interface BookingConfirmationEmailData {
-  to: string
-  bookingReference: string
-  customerName: string
-  eventName: string
-  eventDate: string
-  eventTime: string
-  selectedServices: string[]
-  venueName: string
-  expectedAttendees: number
-}
-
-export async function sendBookingConfirmationEmail(
-  data: BookingConfirmationEmailData,
-): Promise<{ success: boolean; error?: string }> {
-  try {
-    const { error } = await resend.emails.send({
-      from: process.env.EMAIL_FROM!,
-      to: data.to,
-      subject: `Booking Confirmed: ${data.bookingReference} — ${data.eventName}`,
-      html: generateBookingConfirmationHTML(data),
-      // Optional: attach a calendar invite
-      // attachments: [{ filename: 'event.ics', content: generateICS(data) }],
-    })
-
-    if (error) {
-      console.error('[sendBookingConfirmationEmail] Resend error:', error)
-      return { success: false, error: error.message }
-    }
-
-    return { success: true }
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error'
-    console.error('[sendBookingConfirmationEmail] Unexpected error:', message)
-    return { success: false, error: message }
-  }
-}
-
-
-function generateBookingConfirmationHTML(data: BookingConfirmationEmailData): string {
-  const formattedDate = new Date(data.eventDate).toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
-
+function baseTemplate(content: string, title: string): string {
   return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Booking Confirmation</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${title}</title>
   <style>
-    body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f4f4f5; }
-    .container { max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-    .header { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 32px 24px; text-align: center; }
-    .header h1 { margin: 0 0 8px; color: #fbbf24; font-size: 28px; font-weight: 700; }
-    .header p { margin: 0; color: #cbd5e1; font-size: 14px; }
-    .content { padding: 32px 24px; }
-    .reference { background: #fef3c7; border: 2px solid #fbbf24; border-radius: 8px; padding: 16px; text-align: center; margin-bottom: 24px; }
-    .reference-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #92400e; font-weight: 600; margin-bottom: 4px; }
-    .reference-code { font-size: 24px; font-weight: 700; color: #92400e; font-family: 'Courier New', monospace; }
-    .info-section { margin-bottom: 24px; }
-    .info-section h2 { font-size: 16px; font-weight: 600; color: #0f172a; margin: 0 0 12px; }
-    .info-grid { display: grid; grid-template-columns: 120px 1fr; gap: 8px; }
-    .info-label { font-size: 13px; color: #64748b; font-weight: 500; }
-    .info-value { font-size: 13px; color: #0f172a; font-weight: 400; }
-    .services-list { list-style: none; padding: 0; margin: 8px 0 0; }
-    .services-list li { padding: 6px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; color: #0f172a; }
-    .services-list li:last-child { border-bottom: none; }
-    .next-steps { background: #eff6ff; border-left: 4px solid #3b82f6; padding: 16px; border-radius: 4px; margin-top: 24px; }
-    .next-steps h3 { margin: 0 0 12px; font-size: 14px; color: #1e40af; font-weight: 600; }
-    .next-steps ol { margin: 0; padding-left: 20px; }
-    .next-steps li { font-size: 13px; color: #1e40af; margin-bottom: 6px; }
-    .footer { background: #f8fafc; padding: 24px; text-align: center; border-top: 1px solid #e2e8f0; }
-    .footer p { margin: 0 0 8px; font-size: 13px; color: #64748b; }
-    .footer a { color: #3b82f6; text-decoration: none; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0f0f13; font-family: 'Georgia', serif; color: #e8e0f0; }
+    .wrapper { max-width: 600px; margin: 40px auto; background: #1a1225; border-radius: 12px; overflow: hidden; border: 1px solid #8B1FA8; }
+    .header { background: linear-gradient(135deg, #8B1FA8 0%, #5c1070 100%); padding: 32px 40px; text-align: center; }
+    .header h1 { color: #FFD700; font-size: 24px; font-weight: 700; letter-spacing: 1px; margin-bottom: 4px; }
+    .header p { color: rgba(255,255,255,0.7); font-size: 13px; }
+    .body { padding: 40px; }
+    .body p { font-size: 15px; line-height: 1.8; color: #d4c8e8; margin-bottom: 16px; }
+    .detail-card { background: rgba(139,31,168,0.12); border: 1px solid rgba(139,31,168,0.3); border-radius: 8px; padding: 20px 24px; margin: 24px 0; }
+    .detail-card h3 { color: #FFD700; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
+    .detail-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-label { color: #9d8fbe; font-size: 13px; }
+    .detail-value { color: #e8e0f0; font-size: 13px; font-weight: 500; text-align: right; max-width: 60%; }
+    .btn { display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #FFD700, #f0bc00); color: #1a1225; font-weight: 700; font-size: 14px; text-decoration: none; border-radius: 8px; margin: 8px 4px; letter-spacing: 0.5px; }
+    .btn-outline { background: transparent; border: 2px solid #8B1FA8; color: #c070e8; }
+    .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .badge-pending { background: rgba(255,193,7,0.2); color: #FFC107; border: 1px solid rgba(255,193,7,0.4); }
+    .badge-confirmed { background: rgba(23,162,184,0.2); color: #17A2B8; border: 1px solid rgba(23,162,184,0.4); }
+    .badge-cancelled { background: rgba(220,53,69,0.2); color: #DC3545; border: 1px solid rgba(220,53,69,0.4); }
+    .badge-rescheduled { background: rgba(139,31,168,0.2); color: #c070e8; border: 1px solid rgba(139,31,168,0.4); }
+    .badge-completed { background: rgba(40,167,69,0.2); color: #28A745; border: 1px solid rgba(40,167,69,0.4); }
+    .footer { padding: 24px 40px; border-top: 1px solid rgba(255,255,255,0.06); text-align: center; }
+    .footer p { color: #6b5f84; font-size: 12px; line-height: 1.6; }
+    .footer a { color: #8B1FA8; text-decoration: none; }
+    @media (max-width: 600px) {
+      .body { padding: 24px 20px; }
+      .header { padding: 24px 20px; }
+      .detail-row { flex-direction: column; gap: 4px; }
+      .detail-value { text-align: left; max-width: 100%; }
+    }
   </style>
 </head>
 <body>
-  <div class="container">
+  <div class="wrapper">
     <div class="header">
-      <h1>Booking Request Received</h1>
-      <p>Silverline Brilliance — Professional AV Services</p>
+      <h1>${FROM_NAME}</h1>
+      <p>Professional Event Services</p>
     </div>
-    
-    <div class="content">
-      <p style="font-size: 15px; color: #0f172a; margin: 0 0 20px;">
-        Dear ${escapeHtml(data.customerName)},
-      </p>
-      <p style="font-size: 15px; color: #475569; margin: 0 0 24px; line-height: 1.6;">
-        Thank you for choosing Silverline Brilliance. We've received your booking request and our team will review it shortly. You should receive a detailed quote within <strong>24 hours</strong>.
-      </p>
-
-      <div class="reference">
-        <div class="reference-label">Your Booking Reference</div>
-        <div class="reference-code">${escapeHtml(data.bookingReference)}</div>
-      </div>
-
-      <div class="info-section">
-        <h2>Event Details</h2>
-        <div class="info-grid">
-          <div class="info-label">Event:</div>
-          <div class="info-value">${escapeHtml(data.eventName)}</div>
-          <div class="info-label">Date:</div>
-          <div class="info-value">${formattedDate}</div>
-          <div class="info-label">Time:</div>
-          <div class="info-value">${escapeHtml(data.eventTime)}</div>
-          <div class="info-label">Venue:</div>
-          <div class="info-value">${escapeHtml(data.venueName)}</div>
-          <div class="info-label">Attendees:</div>
-          <div class="info-value">${data.expectedAttendees.toLocaleString()}</div>
-        </div>
-      </div>
-
-      <div class="info-section">
-        <h2>Requested Services</h2>
-        <ul class="services-list">
-          ${data.selectedServices.map((service) => `<li>✓ ${escapeHtml(service)}</li>`).join('')}
-        </ul>
-      </div>
-
-      <div class="next-steps">
-        <h3>What Happens Next</h3>
-        <ol>
-          <li>Our team will review your requirements</li>
-          <li>You'll receive an itemised quote within 24 hours</li>
-          <li>Once approved, your date will be secured</li>
-          <li>We'll send a written agreement for your signature</li>
-        </ol>
-      </div>
+    <div class="body">
+      ${content}
     </div>
-
     <div class="footer">
-      <p><strong>Questions?</strong> Reply to this email or call us at <a href="tel:+254712345678">+254 712 345 678</a></p>
-      <p>Email: <a href="mailto:bookings@silverlinebrilliance.com">bookings@silverlinebrilliance.com</a></p>
-      <p style="font-size: 12px; color: #94a3b8; margin-top: 16px;">
-        © ${new Date().getFullYear()} Silverline Brilliance. All rights reserved.
-      </p>
+      <p>You received this email because you have a booking with ${FROM_NAME}.<br/>
+      If you have questions, reply to this email or contact us at <a href="mailto:${ADMIN_EMAIL}">${ADMIN_EMAIL}</a>.</p>
     </div>
   </div>
 </body>
 </html>
-  `.trim()
+`
 }
 
-function escapeHtml(unsafe: string): string {
-  return unsafe
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;')
+function bookingDetailCard(booking: Booking): string {
+  return `
+<div class="detail-card">
+  <h3>Booking Details</h3>
+  <div class="detail-row">
+    <span class="detail-label">Booking ID</span>
+    <span class="detail-value">#${booking.id.slice(0, 8).toUpperCase()}</span>
+  </div>
+  <div class="detail-row">
+    <span class="detail-label">Client Name</span>
+    <span class="detail-value">${booking.full_name}</span>
+  </div>
+  <div class="detail-row">
+    <span class="detail-label">Event Date</span>
+    <span class="detail-value">${new Date(booking.event_date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+  </div>
+  ${booking.event_start_time ? `<div class="detail-row"><span class="detail-label">Event Time</span><span class="detail-value">${booking.event_start_time}</span></div>` : ''}
+  ${booking.venue_address? `<div class="detail-row"><span class="detail-label">Location</span><span class="detail-value">${booking.venue_address}</span></div>` : ''}
+  ${booking.selected_services?.length ? `<div class="detail-row"><span class="detail-label">Services</span><span class="detail-value">${booking.selected_services.join(', ')}</span></div>` : ''}
+  ${booking.price_total ? `<div class="detail-row"><span class="detail-label">Total</span><span class="detail-value">$${booking.price_total.toLocaleString()}</span></div>` : ''}
+</div>
+`
+}
+
+// ============================================================
+// TEMPLATE BUILDERS
+// ============================================================
+
+function bookingCreatedAdminEmail(booking: Booking): { subject: string; html: string } {
+  return {
+    subject: `🎉 New Booking Request — ${booking.full_name}`,
+    html: baseTemplate(`
+      <p>You have a <strong style="color:#FFD700;">new booking request</strong> from a client. Please review and confirm.</p>
+      ${bookingDetailCard(booking)}
+      ${booking?.notes ? `<p><strong style="color:#c070e8;">Client Notes:</strong><br/>${booking?.notes}</p>` : ''}
+      <div style="text-align:center; margin-top:32px;">
+        <a href="${process.env.NEXT_PUBLIC_ADMIN_URL}/dashboard/bookings/${booking.id}" class="btn">View & Confirm Booking</a>
+      </div>
+    `, 'New Booking Request'),
+  }
+}
+
+function bookingConfirmedClientEmail(booking: Booking): { subject: string; html: string } {
+  return {
+    subject: `✅ Booking Confirmed — ${new Date(booking.event_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`,
+    html: baseTemplate(`
+      <p>Dear <strong style="color:#FFD700;">${booking.full_name}</strong>,</p>
+      <p>We're thrilled to confirm your booking! We're looking forward to making your event truly special.</p>
+      ${bookingDetailCard(booking)}
+      <p>If you need to make any changes or have questions, please don't hesitate to reach out. We're here to help every step of the way.</p>
+      <p style="color:#9d8fbe; font-size:14px;">Warm regards,<br/><strong style="color:#e8e0f0;">${FROM_NAME} Team</strong></p>
+    `, 'Booking Confirmed'),
+  }
+}
+
+function bookingRescheduledClientEmail(booking: Booking, oldDate: string, reason?: string): { subject: string; html: string } {
+  return {
+    subject: `📅 Booking Rescheduled — Updated to ${new Date(booking.event_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`,
+    html: baseTemplate(`
+      <p>Dear <strong style="color:#FFD700;">${booking.full_name}</strong>,</p>
+      <p>Your booking has been <strong style="color:#c070e8;">rescheduled</strong>. Please see the updated details below.</p>
+      <div class="detail-card" style="margin-bottom:8px; border-color:rgba(220,53,69,0.3); background:rgba(220,53,69,0.05);">
+        <h3 style="color:#DC3545;">Previous Date</h3>
+        <div class="detail-row">
+          <span class="detail-label">Was</span>
+          <span class="detail-value" style="color:#f77;">${new Date(oldDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+        </div>
+      </div>
+      ${bookingDetailCard(booking)}
+      ${reason ? `<p><strong style="color:#c070e8;">Reason for reschedule:</strong><br/>${reason}</p>` : ''}
+      <p>If this change doesn't work for you, please contact us as soon as possible to discuss alternatives.</p>
+      <p style="color:#9d8fbe; font-size:14px;">Warm regards,<br/><strong style="color:#e8e0f0;">${FROM_NAME} Team</strong></p>
+    `, 'Booking Rescheduled'),
+  }
+}
+
+function bookingCancelledClientEmail(booking: Booking): { subject: string; html: string } {
+  return {
+    subject: `Booking Cancellation Notice`,
+    html: baseTemplate(`
+      <p>Dear <strong style="color:#FFD700;">${booking.full_name}</strong>,</p>
+      <p>We're writing to confirm that your booking scheduled for <strong>${new Date(booking.event_date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</strong> has been cancelled.</p>
+      ${bookingDetailCard(booking)}
+      <p>We're sorry for any inconvenience. If you'd like to rebook or have any questions, please don't hesitate to get in touch.</p>
+      <div style="text-align:center; margin-top:32px;">
+        <a href="${process.env.NEXT_PUBLIC_SITE_URL}/booking" class="btn">Book Again</a>
+      </div>
+      <p style="color:#9d8fbe; font-size:14px; margin-top:24px;">Warm regards,<br/><strong style="color:#e8e0f0;">${FROM_NAME} Team</strong></p>
+    `, 'Booking Cancelled'),
+  }
+}
+
+function bookingCompletedClientEmail(booking: Booking): { subject: string; html: string } {
+  return {
+    subject: `🌟 Thank You — We Hope You Loved Your Event!`,
+    html: baseTemplate(`
+      <p>Dear <strong style="color:#FFD700;">${booking.full_name}</strong>,</p>
+      <p>It was an absolute pleasure working with you! We hope your event was everything you dreamed of and more. ✨</p>
+      ${bookingDetailCard(booking)}
+      <p>If you'd like to leave a review or share your experience, we'd love to hear from you. Your feedback means the world to us!</p>
+      <p>We hope to have the pleasure of working with you again.</p>
+      <p style="color:#9d8fbe; font-size:14px;">With gratitude,<br/><strong style="color:#e8e0f0;">${FROM_NAME} Team</strong></p>
+    `, 'Event Complete — Thank You!'),
+  }
+}
+
+// ============================================================
+// MAIN SEND FUNCTION
+// ============================================================
+
+interface SendEmailOptions {
+  event: EmailEvent
+  booking: Booking
+  meta?: { oldDate?: string; reason?: string }
+}
+
+type EmailEvent =
+  | 'booking_created'
+  | 'booking_confirmed'
+  | 'booking_rescheduled'
+  | 'booking_cancelled'
+  | 'booking_completed'
+
+export async function sendBookingEmail({ event, booking, meta }: SendEmailOptions) {
+  const emails: Array<{ to: string; subject: string; html: string }> = []
+
+  switch (event) {
+    case 'booking_created':
+      emails.push({ to: ADMIN_EMAIL, ...bookingCreatedAdminEmail(booking) })
+      break
+    case 'booking_confirmed':
+      emails.push({ to: booking.email, ...bookingConfirmedClientEmail(booking) })
+      break
+    case 'booking_rescheduled':
+      emails.push({ to: booking.email, ...bookingRescheduledClientEmail(booking, meta?.oldDate ?? booking.event_date, meta?.reason) })
+      break
+    case 'booking_cancelled':
+      emails.push({ to: booking.email, ...bookingCancelledClientEmail(booking) })
+      break
+    case 'booking_completed':
+      emails.push({ to: booking.email, ...bookingCompletedClientEmail(booking) })
+      break
+  }
+
+  const results = await Promise.allSettled(
+    emails.map(({ to, subject, html }) =>
+      resend.emails.send({
+        from: `${FROM_NAME} <${FROM_EMAIL}>`,
+        to,
+        subject,
+        html,
+      })
+    )
+  )
+
+  const errors = results.filter((r) => r.status === 'rejected')
+  if (errors.length > 0) {
+    console.error('[Email] Send errors:', errors)
+    throw new Error(`Failed to send ${errors.length} email(s)`)
+  }
+
+  return results
 }
