@@ -1,6 +1,7 @@
 import ContactHero from "@/src/components/contact/ContactHero";
 import ContactInfo from "@/src/components/contact/ContactInfo";
 import ContactSidebar from "@/src/components/contact/ContactSidebar";
+import ContactForm from "@/src/components/ContactForm";
 
 export default function ContactPage() {
   return (
@@ -12,7 +13,7 @@ export default function ContactPage() {
           <ContactInfo />
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            {/*<ContactForm />*/}
+            <ContactForm />
             <ContactSidebar />
           </div>
         </div>
