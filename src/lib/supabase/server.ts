@@ -33,7 +33,6 @@ export async function createServerSupabaseClient(){
 
 // Admin client using service role key (bypasses RLS — use carefully)
 export function createAdminClient() {
-//   const { createClient } = require('@supabase/supabase-js')
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
