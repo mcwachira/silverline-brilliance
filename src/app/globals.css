@@ -531,7 +531,9 @@
 
     /* ─── Stat Cards ──────────────────────────────────────── */
     .stat-card {
-        @apply card p-5 relative overflow-hidden;
+        @apply rounded-xl p-5 relative overflow-hidden;
+        background: var(--surface);
+        border: 1px solid var(--border);
         transition: all 0.2s ease;
     }
 
@@ -557,8 +559,12 @@
     }
 
     .page-title {
-        @apply text-2xl text-gold-gradient;
+        @apply text-2xl;
         font-family: 'Playfair Display', serif;
+        background: linear-gradient(135deg, var(--accent), var(--accent-light));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
     }
 
     .page-subtitle {
