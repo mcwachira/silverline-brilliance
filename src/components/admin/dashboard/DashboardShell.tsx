@@ -27,7 +27,7 @@ interface Props {
   profile: AdminProfile | null
 }
 
-export default function DashboardShell({ children,  profile }: Props) {
+export default function DashboardShell({ children, user, profile }: Props) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const pathname = usePathname()
@@ -40,14 +40,11 @@ export default function DashboardShell({ children,  profile }: Props) {
     router.push('/admin/login')
   }
 
-  // const displayName = profile?.full_name ?? user.email?.split('@')[0] ?? 'Admin'
-  // const initials = displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+  const displayName = profile?.full_name ?? user.email?.split('@')[0] ?? 'Admin'
+  const initials = displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
 
-  const initials = "Se";
-  const displayName = "Sean";
-  const user ={
-    email: "sean@example.com"
-  }
+;
+
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg)' }}>
 

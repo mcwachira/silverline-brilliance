@@ -1,17 +1,17 @@
-// app/dashboard/page.tsx
-import { Suspense } from 'react'
-import { createClient } from '@/src/lib/supabase/server'
-import { sanityReadClient, BLOG_POSTS_QUERY } from '@/src/sanity/lib/client'
+
+import { createServerSupabaseClient } from '@/src/lib/supabase/server'
+import { sanityClient , BLOG_POSTS_QUERY } from '@/src/sanity/lib/sanity'
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns'
 import StatCard from '@/src/components/admin/dashboard/StatCard'
 import RecentBookings from '@/src/components/admin/booking/RecentBookings'
-import BookingsByStatusChart from '@/src/components/admin//admin/dashboard/bookingsByStatusChart'
+import BookingsByStatusChart from '@/src/components/admin/dashboard/BookingsByStatusChart'
 import { CalendarDays, FileText, TrendingUp, Users, Clock, CheckCircle2 } from 'lucide-react'
+import type { Booking } from '@/types/booking'
 
 export const metadata = { title: 'Overview' }
 
 async function getDashboardData() {
-  const supabase = await createClient()
+  const supabase = await createServerSupabaseClient()
   const now = new Date()
 
   const [
@@ -31,7 +31,7 @@ async function getDashboardData() {
       .lte('created_at', endOfMonth(now).toISOString()),
     supabase.from('bookings').select('*').order('created_at', { ascending: false }).limit(5),
     supabase.from('bookings').select('status'),
-    sanityReadClient.fetch(`*[_type == "post"] { _id, title, status, _createdAt }`).catch(() => []),
+    sanityClient.fetch(`*[_type == "post"] { _id, title, status, _createdAt }`).catch(() => []),
   ])
 
   // Status breakdown for chart
@@ -50,7 +50,7 @@ async function getDashboardData() {
       thisMonthBookings: thisMonthBookings ?? 0,
       publishedPosts,
     },
-    recentBookings: recentBookings ?? [],
+    recentBookings: recentBookings as Booking[],
     statusCounts,
   }
 }
