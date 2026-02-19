@@ -5,7 +5,7 @@ import type { Booking } from '@/types/types'
 import { format } from 'date-fns'
 import Link from 'next/link'
 import StatusBadge from '@/src/components/shared/StatusBadge'
-import BookingDetailActions from '@/src/components/admin/bookings/BookingDetailActions'
+import BookingDetailActions from '@/src/components/admin/Bookings/BookingDetailActions'
 import {
   ArrowLeft, User, Calendar, MapPin, FileText,
   DollarSign, History, CreditCard, Paperclip, Phone, Mail
