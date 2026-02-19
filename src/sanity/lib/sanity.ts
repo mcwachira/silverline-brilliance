@@ -1,5 +1,6 @@
 import { createClient } from "next-sanity";
 import imageUrlBuilder from "@sanity/image-url";
+import type { SanityImageSource } from '@sanity/image-url/lib/types/types'
 import { apiVersion, dataset, projectId, useCdn } from "../env";
 
 // ─────────────────────────────────────────────────────────────
@@ -31,7 +32,7 @@ export const sanityClient = createClient({
 
 const builder = imageUrlBuilder(client);
 
-export const urlFor = (source: any) => builder.image(source);
+export const urlFor = (source: SanityImageSource) => builder.image(source);
 
 // ─────────────────────────────────────────────────────────────
 // GROQ QUERIES — unchanged from your original
@@ -47,8 +48,10 @@ export const queries = {
   }`,
 
   // 📰 All Blog Posts
-  blogPosts: `*[_type == "blogPost"] | order(publishedAt desc){
+  blogPosts: `*[_type == "blogPost"] | order(_createdAt desc){
     _id,
+     _createdAt,
+    _updatedAt,
     title,
     slug,
     excerpt,
@@ -61,9 +64,10 @@ export const queries = {
       alt
     },
     "categories": categories[]->{
-        _id,
-        title,
-        slug
+       _id,
+  name,
+  slug,
+  description
       },
     tags,
     metaTitle,
@@ -106,8 +110,9 @@ export const queries = {
     },
     "categories": categories[]->{
         _id,
-        title,
-        slug
+  name,
+  slug,
+  description
       },
     tags,
     metaTitle,
@@ -230,10 +235,41 @@ export const BLOG_POST_BY_ID_QUERY = `
   }
 `;
 
+
+export const CATEGORIES_QUERY = `
+  *[_type == "category"] | order(title asc) {
+    _id,
+    title,
+    slug,
+    description,
+  }
+`
+
+export const TAGS_QUERY = `array::unique(*[_type == "blogPost"].tags[])`
+
+export const AUTHORS_QUERY = `
+  *[_type == "author"] | order(name asc) {
+    _id,
+    name,
+    slug,
+    image { asset-> },
+    bio
+  }
+`
+
 // ─────────────────────────────────────────────────────────────
 // MUTATIONS — dashboard admin actions only
 // All use sanityClient (write token) — never call from public pages
 // ─────────────────────────────────────────────────────────────
+
+export async function createBlogPost(data: Partial<import('@/types').BlogPost>) {
+  return sanityClient.create({
+    _type: 'blogPost',
+    ...data,
+    status: data.status ?? 'draft',
+  })
+}
+
 
 /** Publish: set publishedAt to now */
 export async function publishBlogPost(id: string) {
