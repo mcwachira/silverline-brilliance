@@ -190,12 +190,12 @@ interface SendEmailOptions {
   meta?: { oldDate?: string; reason?: string }
 }
 
-type EmailEvent =
-  | 'booking_created'
-  | 'booking_confirmed'
-  | 'booking_rescheduled'
-  | 'booking_cancelled'
-  | 'booking_completed'
+// type EmailEvent =
+//   | 'booking_created'
+//   | 'booking_confirmed'
+//   | 'booking_rescheduled'
+//   | 'booking_cancelled'
+//   | 'booking_completed'
 
 export async function sendBookingEmail({ event, booking, meta }: SendEmailOptions) {
   const emails: Array<{ to: string; subject: string; html: string }> = []
