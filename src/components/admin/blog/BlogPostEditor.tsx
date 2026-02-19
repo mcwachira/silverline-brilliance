@@ -3,10 +3,10 @@
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import type { BlogPost, SanityCategory, SanityAuthor } from '@/types'
-import { getBlogStatus } from '@/types/types'
-import type { PostFormData } from '@/app/dashboard/blog/new/page'
-import { slugify } from '@/app/dashboard/blog/new/page'
+import type { BlogPost, SanityCategory, SanityAuthor, PostFormData } from '@/types/types'
+import { getBlogStatus, slugify } from '@/types/types'
+'
+
 import {
   ArrowLeft, Save, Globe, Eye, EyeOff,
   Loader2, Plus, X, Hash, ChevronDown
