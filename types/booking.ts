@@ -3,34 +3,34 @@ export interface Booking {
   booking_reference: string;
   
   // Client Info
-  client_name: string;
-  client_email: string;
-  client_phone: string;
-  company_name?: string;
+  full_name: string;
+  email: string;
+  phone: string;
+  company: string | null;
   
   // Event Info
   event_name: string;
   event_type: string;
   event_date: string;
   event_start_time: string;
-  event_end_time: string;
-  venue_location: string;
-  venue_address?: string;
-  expected_attendees?: number;
+  event_end_time: string | null;
+  venue_name: string;
+  venue_address: string | null;
+  expected_attendees: number;
   
   // Services
-  services: string[];
-  special_requirements?: string;
-  budget_range?: string;
+  selected_services: string[];
+  special_requirements: string | null;
+  budget_range: string | null;
   
   // Status
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
   
   // Metadata
-  preferred_contact?: string;
-  referral_source?: string;
-  file_uploads?: any[];
-  admin_notes?: string;
+  preferred_contact: string;
+  how_heard: string | null;
+  assigned_to: string | null;
+  internal_notes: string | null;
   
   // Timestamps
   created_at: string;

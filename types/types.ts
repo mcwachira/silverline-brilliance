@@ -52,26 +52,26 @@ export interface Booking {
   full_name: string
   email: string
   phone: string
-  company?: string
+  company: string | null
 
   // Event
   event_name: string
   event_type: string
   event_date: string
   event_start_time: string
-  event_end_time?: string
+  event_end_time: string | null
   expected_attendees: number
   venue_name: string
-  venue_address?: string
+  venue_address: string | null
 
   // Services
   selected_services: string[]
 
   // Additional
-  special_requirements?: string
-  budget_range?: string
-  how_heard?: string
-  preferred_contact: PreferredContact
+  special_requirements: string | null
+  budget_range: string | null
+  how_heard: string | null
+  preferred_contact: string
 
   // Pricing (NEW)
   price_total?: number
@@ -90,8 +90,8 @@ export interface Booking {
 
   // Admin
   status: BookingStatus
-  internal_notes?: string
-  assigned_to?: string
+  internal_notes: string | null
+  assigned_to: string | null
 
   // Timestamps
   created_at: string
