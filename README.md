@@ -99,7 +99,7 @@ Open [http://localhost:3000](http://localhost:3000) and navigate to `/admin`.
 ```
 silverline-admin/
 ├── app/
-│   ├── (auth)/login/           # Login page
+│   ├── (admin)/admin/login/           # Login page
 │   ├── admin/                  # Admin dashboard
 │   │   ├── dashboard/          # Dashboard overview
 │   │   ├── bookings/           # Booking management
