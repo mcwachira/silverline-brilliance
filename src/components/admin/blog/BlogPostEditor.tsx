@@ -10,7 +10,6 @@ import type {
   PostFormData,
 } from "@/types/types";
 import { getBlogStatus, slugify } from "@/types/types";
-
 import {
   ArrowLeft,
   Save,
@@ -22,6 +21,9 @@ import {
   X,
   Hash,
   ChevronDown,
+  BookOpen,
+  Check,
+  Info,
 } from "lucide-react";
 
 interface Props {
@@ -32,6 +34,78 @@ interface Props {
   loadingMeta: boolean;
   onSave: (data: PostFormData, publish: boolean) => Promise<void>;
 }
+
+// ── Sub-components ────────────────────────────────────────────────
+
+function SectionCard({
+  title,
+  children,
+  className = "",
+}: {
+  title?: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={`card p-5 space-y-4 ${className}`}>
+      {title && (
+        <h3
+          className="text-xs font-semibold uppercase tracking-widest"
+          style={{ color: "var(--text-faint)" }}
+        >
+          {title}
+        </h3>
+      )}
+      {children}
+    </div>
+  );
+}
+
+interface CharCounterProps {
+  current: number;
+  ideal: number;
+  max: number;
+}
+
+function CharCounter({ current, ideal, max }: CharCounterProps) {
+  const overIdeal = current > ideal;
+  const overMax = current > max;
+  return (
+    <div className="flex items-center justify-between mt-1.5">
+      {overIdeal && !overMax ? (
+        <span
+          className="text-xs flex items-center gap-1"
+          style={{ color: "oklch(0.85 0.15 85)" }}
+        >
+          <Info className="w-3 h-3" /> Getting long
+        </span>
+      ) : overMax ? (
+        <span
+          className="text-xs flex items-center gap-1"
+          style={{ color: "oklch(0.63 0.26 29)" }}
+        >
+          <Info className="w-3 h-3" /> Too long
+        </span>
+      ) : (
+        <span />
+      )}
+      <span
+        className="text-xs tabular-nums"
+        style={{
+          color: overMax
+            ? "oklch(0.63 0.26 29)"
+            : overIdeal
+            ? "oklch(0.85 0.15 85)"
+            : "var(--text-faint)",
+        }}
+      >
+        {current}/{max}
+      </span>
+    </div>
+  );
+}
+
+// ── Main editor ───────────────────────────────────────────────────
 
 export default function BlogPostEditor({
   mode,
@@ -47,21 +121,19 @@ export default function BlogPostEditor({
 
   const isPublished = post ? getBlogStatus(post) === "published" : false;
 
-  // ── Form state (seeded from existing post if editing) ──────────
   const [form, setForm] = useState<PostFormData>({
     title: post?.title ?? "",
     slug: post?.slug?.current ?? "",
     excerpt: post?.excerpt ?? "",
     authorId: post?.author?._id ?? "",
     categoryIds: post?.categories?.map((c) => c._id) ?? [],
-    tags: post?.tags ?? [],
+    tags: (post?.tags as string[]) ?? [],
     metaTitle: post?.metaTitle ?? "",
     metaDescription: post?.metaDescription ?? "",
   });
 
   const [slugManual, setSlugManual] = useState(mode === "edit");
 
-  // ── Helpers ────────────────────────────────────────────────────
   function set<K extends keyof PostFormData>(key: K, val: PostFormData[K]) {
     setForm((f) => ({ ...f, [key]: val }));
   }
@@ -76,7 +148,7 @@ export default function BlogPostEditor({
       "categoryIds",
       form.categoryIds.includes(id)
         ? form.categoryIds.filter((c) => c !== id)
-        : [...form.categoryIds, id],
+        : [...form.categoryIds, id]
     );
   }
 
@@ -94,7 +166,7 @@ export default function BlogPostEditor({
   function removeTag(t: string) {
     set(
       "tags",
-      form.tags.filter((x) => x !== t),
+      form.tags.filter((x) => x !== t)
     );
   }
 
@@ -126,13 +198,16 @@ export default function BlogPostEditor({
 
   const busy = isPending;
 
-  // ── Render ─────────────────────────────────────────────────────
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6 animate-fade-in">
       {/* ── Header ── */}
-      <div className="page-header flex-wrap gap-4">
-        <div className="flex items-center gap-4">
-          <Link href="/dashboard/blog" className="btn-ghost p-2">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <Link
+            href="/admin/dashboard/blog"
+            className="btn-ghost p-2 flex-shrink-0"
+            title="Back to blog list"
+          >
             <ArrowLeft className="w-4 h-4" />
           </Link>
           <div>
@@ -140,26 +215,33 @@ export default function BlogPostEditor({
               {mode === "create" ? "New Post" : "Edit Post"}
             </h1>
             <p className="page-subtitle">
-              {mode === "edit" && post
-                ? isPublished
-                  ? "✅ Published · changes save immediately"
-                  : "📝 Draft"
-                : "Manage in Sanity Studio for rich text editing"}
+              {mode === "edit" && post ? (
+                isPublished ? (
+                  <span style={{ color: "oklch(0.62 0.17 145)" }}>
+                    ● Published — changes save immediately
+                  </span>
+                ) : (
+                  <span style={{ color: "var(--text-faint)" }}>○ Draft</span>
+                )
+              ) : (
+                "Manage rich text content in Sanity Studio"
+              )}
             </p>
           </div>
         </div>
 
         {/* Action buttons */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {mode === "edit" && post && (
-            <a
-              href={`${process.env.NEXT_PUBLIC_SANITY_STUDIO_URL ?? ""}/desk/blogPost;${post._id}`}
+            
+              <Link href={`${process.env.NEXT_PUBLIC_SANITY_STUDIO_URL ?? ""}/desk/blogPost;${post._id}`}
               target="_blank"
               rel="noopener noreferrer"
               className="btn-secondary text-sm"
             >
-              <Eye className="w-4 h-4" /> Open in Studio
-            </a>
+              <Eye className="w-4 h-4" />
+              Open in Studio
+            </Link>
           )}
 
           <button
@@ -168,14 +250,11 @@ export default function BlogPostEditor({
             className="btn-secondary text-sm"
           >
             {busy && saveType === "draft" ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" /> Saving...
-              </>
+              <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
-              <>
-                <Save className="w-4 h-4" /> Save Draft
-              </>
+              <Save className="w-4 h-4" />
             )}
+            {busy && saveType === "draft" ? "Saving..." : "Save Draft"}
           </button>
 
           <button
@@ -184,30 +263,33 @@ export default function BlogPostEditor({
             className="btn-primary text-sm"
           >
             {busy && saveType === "publish" ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" /> Publishing...
-              </>
+              <Loader2 className="w-4 h-4 animate-spin" />
             ) : isPublished ? (
-              <>
-                <EyeOff className="w-4 h-4" /> Update & Keep Published
-              </>
+              <EyeOff className="w-4 h-4" />
             ) : (
-              <>
-                <Globe className="w-4 h-4" /> Publish
-              </>
+              <Globe className="w-4 h-4" />
             )}
+            {busy && saveType === "publish"
+              ? "Publishing..."
+              : isPublished
+              ? "Update & Keep Published"
+              : "Publish"}
           </button>
         </div>
       </div>
 
-      {/* ── Two column layout ── */}
+      {/* ── Two-column layout ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* ── Main column ── */}
+        {/* ── Main column (2/3) ── */}
         <div className="lg:col-span-2 space-y-5">
-          {/* Title */}
-          <div className="card p-5 space-y-4">
+
+          {/* Core fields card */}
+          <SectionCard>
+            {/* Title */}
             <div>
-              <label className="label">Post Title *</label>
+              <label className="label">
+                Post Title <span style={{ color: "oklch(0.63 0.26 29)" }}>*</span>
+              </label>
               <input
                 className="input text-base"
                 placeholder="Enter a compelling title..."
@@ -215,32 +297,29 @@ export default function BlogPostEditor({
                 onChange={(e) => handleTitleChange(e.target.value)}
                 maxLength={100}
               />
-              <p
-                className="text-xs mt-1 text-right"
-                style={{ color: "var(--text-faint)" }}
-              >
-                {form.title.length}/100
-              </p>
+              <CharCounter current={form.title.length} ideal={70} max={100} />
             </div>
 
             {/* Slug */}
             <div>
-              <label className="label">
-                URL Slug *
-                <span
-                  className="ml-2 text-xs normal-case"
-                  style={{ color: "var(--text-faint)" }}
-                >
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="label mb-0">
+                  URL Slug <span style={{ color: "oklch(0.63 0.26 29)" }}>*</span>
+                </label>
+                <span className="text-xs" style={{ color: "var(--text-faint)" }}>
                   yoursite.com/blog/
-                  <strong style={{ color: "var(--gold)" }}>
+                  <span
+                    className="font-semibold font-mono"
+                    style={{ color: "var(--accent)" }}
+                  >
                     {form.slug || "post-slug"}
-                  </strong>
+                  </span>
                 </span>
-              </label>
+              </div>
               <div className="flex gap-2">
                 <div className="relative flex-1">
                   <Hash
-                    className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none"
                     style={{ color: "var(--text-faint)" }}
                   />
                   <input
@@ -254,7 +333,7 @@ export default function BlogPostEditor({
                         e.target.value
                           .toLowerCase()
                           .replace(/[^a-z0-9-]/g, "-")
-                          .replace(/-+/g, "-"),
+                          .replace(/-+/g, "-")
                       );
                     }}
                   />
@@ -262,13 +341,14 @@ export default function BlogPostEditor({
                 {slugManual && (
                   <button
                     type="button"
-                    className="btn-ghost text-xs whitespace-nowrap"
+                    className="btn-ghost text-xs whitespace-nowrap px-3"
                     onClick={() => {
                       setSlugManual(false);
                       set("slug", slugify(form.title));
                     }}
+                    title="Auto-generate from title"
                   >
-                    Auto
+                    Auto-generate
                   </button>
                 )}
               </div>
@@ -279,7 +359,7 @@ export default function BlogPostEditor({
               <label className="label">
                 Excerpt{" "}
                 <span style={{ color: "var(--text-faint)" }}>
-                  (shown in blog list)
+                  (shown in blog listing)
                 </span>
               </label>
               <textarea
@@ -290,55 +370,55 @@ export default function BlogPostEditor({
                 onChange={(e) => set("excerpt", e.target.value)}
                 maxLength={300}
               />
-              <p
-                className="text-xs mt-1 text-right"
-                style={{ color: "var(--text-faint)" }}
-              >
-                {form.excerpt.length}/300
-              </p>
+              <CharCounter
+                current={form.excerpt.length}
+                ideal={160}
+                max={300}
+              />
             </div>
-          </div>
+          </SectionCard>
 
           {/* Rich text notice */}
           <div
             className="rounded-xl p-4 flex items-start gap-3"
             style={{
-              background: "rgba(255,215,0,0.06)",
-              border: "1px solid rgba(255,215,0,0.2)",
+              background: "oklch(0.88 0.17 85 / 0.06)",
+              border: "1px solid oklch(0.88 0.17 85 / 0.18)",
             }}
           >
-            <span className="text-xl flex-shrink-0">✍️</span>
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{
+                background: "oklch(0.88 0.17 85 / 0.12)",
+                border: "1px solid oklch(0.88 0.17 85 / 0.2)",
+              }}
+            >
+              <BookOpen
+                className="w-4 h-4"
+                style={{ color: "var(--accent)" }}
+              />
+            </div>
             <div>
               <p
-                className="text-sm font-medium"
-                style={{ color: "var(--gold)" }}
+                className="text-sm font-semibold"
+                style={{ color: "var(--accent)" }}
               >
                 Rich Text Content
               </p>
               <p
-                className="text-xs mt-0.5"
+                className="text-xs mt-0.5 leading-relaxed"
                 style={{ color: "var(--text-faint)" }}
               >
-                Your post body uses Sanity's Portable Text editor which isn't
-                embeddable here.
+                Post body uses Sanity's Portable Text editor.{" "}
                 {mode === "create"
-                  ? ' Save the draft first, then click "Open in Studio" to write the full content.'
-                  : ' Use the "Open in Studio" button above to edit the post body.'}
+                  ? 'Save the draft first, then click "Open in Studio" to write the full content.'
+                  : 'Use "Open in Studio" above to edit the post body.'}
               </p>
             </div>
           </div>
 
           {/* SEO */}
-          <div className="card p-5 space-y-4">
-            <h3
-              className="text-sm font-semibold"
-              style={{
-                color: "var(--text)",
-                fontFamily: "Playfair Display,serif",
-              }}
-            >
-              SEO Settings
-            </h3>
+          <SectionCard title="SEO Settings">
             <div>
               <label className="label">
                 Meta Title{" "}
@@ -353,22 +433,11 @@ export default function BlogPostEditor({
                 onChange={(e) => set("metaTitle", e.target.value)}
                 maxLength={70}
               />
-              <div className="flex justify-between mt-1">
-                <p
-                  className="text-xs"
-                  style={{
-                    color:
-                      form.metaTitle.length > 60
-                        ? "#FFC107"
-                        : "var(--text-faint)",
-                  }}
-                >
-                  {form.metaTitle.length > 60 ? "⚠ Getting long" : ""}
-                </p>
-                <p className="text-xs" style={{ color: "var(--text-faint)" }}>
-                  {form.metaTitle.length}/70
-                </p>
-              </div>
+              <CharCounter
+                current={form.metaTitle.length}
+                ideal={60}
+                max={70}
+              />
             </div>
             <div>
               <label className="label">
@@ -379,51 +448,38 @@ export default function BlogPostEditor({
               </label>
               <textarea
                 className="input resize-none"
-                rows={2}
+                rows={3}
                 placeholder="Description shown in Google search results..."
                 value={form.metaDescription}
                 onChange={(e) => set("metaDescription", e.target.value)}
                 maxLength={180}
               />
-              <div className="flex justify-between mt-1">
-                <p
-                  className="text-xs"
-                  style={{
-                    color:
-                      form.metaDescription.length > 160
-                        ? "#FFC107"
-                        : "var(--text-faint)",
-                  }}
-                >
-                  {form.metaDescription.length > 160 ? "⚠ Getting long" : ""}
-                </p>
-                <p className="text-xs" style={{ color: "var(--text-faint)" }}>
-                  {form.metaDescription.length}/180
-                </p>
-              </div>
+              <CharCounter
+                current={form.metaDescription.length}
+                ideal={160}
+                max={180}
+              />
             </div>
-          </div>
+          </SectionCard>
         </div>
 
-        {/* ── Sidebar column ── */}
-        <div className="space-y-5">
+        {/* ── Sidebar column (1/3) ── */}
+        <div className="space-y-4">
+
           {/* Author */}
-          <div className="card p-4 space-y-3">
-            <h3
-              className="text-xs font-semibold uppercase tracking-wider"
-              style={{ color: "var(--text-faint)" }}
-            >
-              Author
-            </h3>
+          <SectionCard title="Author">
             {loadingMeta ? (
-              <div className="h-9 rounded animate-pulse bg-white/5" />
+              <div
+                className="h-10 rounded-lg animate-pulse"
+                style={{ background: "oklch(1 0 0 / 0.05)" }}
+              />
             ) : (
               <div className="relative">
                 <select
-                  className="input appearance-none pr-8"
+                  className="input appearance-none pr-8 cursor-pointer"
                   value={form.authorId}
                   onChange={(e) => set("authorId", e.target.value)}
-                  style={{ background: "rgba(255,255,255,0.04)" }}
+                  style={{ background: "oklch(1 0 0 / 0.04)" }}
                 >
                   <option value="">No author selected</option>
                   {authors.map((a) => (
@@ -442,85 +498,87 @@ export default function BlogPostEditor({
                 />
               </div>
             )}
-          </div>
+          </SectionCard>
 
           {/* Categories */}
-          <div className="card p-4 space-y-3">
-            <h3
-              className="text-xs font-semibold uppercase tracking-wider"
-              style={{ color: "var(--text-faint)" }}
-            >
-              Categories
-            </h3>
+          <SectionCard title="Categories">
             {loadingMeta ? (
               <div className="space-y-2">
                 {[1, 2, 3].map((i) => (
                   <div
                     key={i}
-                    className="h-8 rounded animate-pulse bg-white/5"
+                    className="h-8 rounded-lg animate-pulse"
+                    style={{ background: "oklch(1 0 0 / 0.05)" }}
                   />
                 ))}
               </div>
             ) : categories.length === 0 ? (
-              <p className="text-xs" style={{ color: "var(--text-faint)" }}>
+              <div
+                className="flex items-center gap-2 p-2.5 rounded-lg text-xs"
+                style={{
+                  background: "oklch(1 0 0 / 0.03)",
+                  color: "var(--text-faint)",
+                  border: "1px dashed oklch(1 0 0 / 0.1)",
+                }}
+              >
+                <Info className="w-3.5 h-3.5 flex-shrink-0" />
                 No categories yet. Add them in Sanity Studio.
-              </p>
+              </div>
             ) : (
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 {categories.map((cat) => {
                   const checked = form.categoryIds.includes(cat._id);
                   return (
-                    <label
+                    <button
                       key={cat._id}
-                      className="flex items-center gap-2.5 cursor-pointer group"
+                      type="button"
+                      onClick={() => toggleCategory(cat._id)}
+                      className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-all duration-150 text-left"
+                      style={{
+                        background: checked
+                          ? "oklch(0.49 0.18 302 / 0.12)"
+                          : "transparent",
+                        border: checked
+                          ? "1px solid oklch(0.49 0.18 302 / 0.3)"
+                          : "1px solid transparent",
+                      }}
                     >
+                      {/* Custom checkbox */}
                       <div
-                        onClick={() => toggleCategory(cat._id)}
-                        className={`flex-shrink-0 w-4 h-4 rounded transition-all ${
-                          checked
-                            ? "bg-purple-500 border-purple-500"
-                            : "border border-white/20 bg-white/5"
-                        } flex items-center justify-center`}
-                        style={
-                          checked
-                            ? {
-                                background: "var(--purple)",
-                                borderColor: "var(--purple)",
-                              }
-                            : {}
-                        }
+                        className="flex-shrink-0 w-4 h-4 rounded flex items-center justify-center transition-all"
+                        style={{
+                          background: checked
+                            ? "var(--primary)"
+                            : "oklch(1 0 0 / 0.06)",
+                          border: checked
+                            ? "1px solid var(--primary)"
+                            : "1px solid oklch(1 0 0 / 0.15)",
+                        }}
                       >
                         {checked && (
-                          <span className="text-white text-xs leading-none">
-                            ✓
-                          </span>
+                          <Check
+                            className="w-2.5 h-2.5"
+                            style={{ color: "white" }}
+                          />
                         )}
                       </div>
                       <span
-                        className="text-sm transition-colors"
+                        className="text-sm"
                         style={{
                           color: checked ? "var(--text)" : "var(--text-muted)",
                         }}
-                        onClick={() => toggleCategory(cat._id)}
                       >
-                        {cat.name}
+                        {cat.name ?? cat.title}
                       </span>
-                    </label>
+                    </button>
                   );
                 })}
               </div>
             )}
-          </div>
+          </SectionCard>
 
           {/* Tags */}
-          <div className="card p-4 space-y-3">
-            <h3
-              className="text-xs font-semibold uppercase tracking-wider"
-              style={{ color: "var(--text-faint)" }}
-            >
-              Tags
-            </h3>
-
+          <SectionCard title="Tags">
             {/* Existing tags */}
             {form.tags.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
@@ -529,15 +587,16 @@ export default function BlogPostEditor({
                     key={tag}
                     className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium"
                     style={{
-                      background: "rgba(255,215,0,0.1)",
-                      color: "var(--gold)",
-                      border: "1px solid rgba(255,215,0,0.25)",
+                      background: "oklch(0.88 0.17 85 / 0.1)",
+                      color: "var(--accent)",
+                      border: "1px solid oklch(0.88 0.17 85 / 0.25)",
                     }}
                   >
                     {tag}
                     <button
                       onClick={() => removeTag(tag)}
-                      className="hover:text-white transition-colors ml-0.5"
+                      className="ml-0.5 rounded-full hover:opacity-70 transition-opacity"
+                      title={`Remove tag "${tag}"`}
                     >
                       <X className="w-2.5 h-2.5" />
                     </button>
@@ -546,11 +605,11 @@ export default function BlogPostEditor({
               </div>
             )}
 
-            {/* Add tag */}
+            {/* Add tag input */}
             <div className="flex gap-2">
               <input
                 className="input text-sm flex-1"
-                placeholder="Add tag..."
+                placeholder="Add a tag..."
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={(e) => {
@@ -564,6 +623,7 @@ export default function BlogPostEditor({
                 type="button"
                 onClick={addTag}
                 className="btn-secondary p-2 flex-shrink-0"
+                title="Add tag"
               >
                 <Plus className="w-4 h-4" />
               </button>
@@ -571,31 +631,51 @@ export default function BlogPostEditor({
             <p className="text-xs" style={{ color: "var(--text-faint)" }}>
               Press Enter or + to add
             </p>
-          </div>
+          </SectionCard>
 
-          {/* Post status summary */}
+          {/* Post info (edit mode only) */}
           {mode === "edit" && post && (
             <div
-              className="card p-4 space-y-2 text-xs"
-              style={{ color: "var(--text-faint)" }}
+              className="card p-4 space-y-3"
+              style={{ fontSize: "12px" }}
             >
-              <h3 className="font-semibold uppercase tracking-wider">
+              <h3
+                className="text-xs font-semibold uppercase tracking-widest"
+                style={{ color: "var(--text-faint)" }}
+              >
                 Post Info
               </h3>
-              <div className="space-y-1.5">
-                <div className="flex justify-between">
-                  <span>Status</span>
+
+              <div className="space-y-2">
+                {/* Status */}
+                <div className="flex items-center justify-between">
+                  <span style={{ color: "var(--text-faint)" }}>Status</span>
                   <span
+                    className="inline-flex items-center gap-1.5 font-semibold"
                     style={{
-                      color: isPublished ? "#28A745" : "var(--text-muted)",
+                      color: isPublished
+                        ? "oklch(0.62 0.17 145)"
+                        : "var(--text-muted)",
                     }}
                   >
-                    {isPublished ? "● Published" : "○ Draft"}
+                    <span
+                      className="w-1.5 h-1.5 rounded-full"
+                      style={{
+                        background: isPublished
+                          ? "oklch(0.62 0.17 145)"
+                          : "var(--text-faint)",
+                      }}
+                    />
+                    {isPublished ? "Published" : "Draft"}
                   </span>
                 </div>
+
+                {/* Published at */}
                 {post.publishedAt && (
-                  <div className="flex justify-between">
-                    <span>Published</span>
+                  <div className="flex items-center justify-between">
+                    <span style={{ color: "var(--text-faint)" }}>
+                      Published
+                    </span>
                     <span style={{ color: "var(--text-muted)" }}>
                       {new Date(post.publishedAt).toLocaleDateString("en-GB", {
                         day: "numeric",
@@ -605,8 +685,10 @@ export default function BlogPostEditor({
                     </span>
                   </div>
                 )}
-                <div className="flex justify-between">
-                  <span>Created</span>
+
+                {/* Created */}
+                <div className="flex items-center justify-between">
+                  <span style={{ color: "var(--text-faint)" }}>Created</span>
                   <span style={{ color: "var(--text-muted)" }}>
                     {new Date(post._createdAt).toLocaleDateString("en-GB", {
                       day: "numeric",
@@ -615,8 +697,10 @@ export default function BlogPostEditor({
                     })}
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span>Last updated</span>
+
+                {/* Last updated */}
+                <div className="flex items-center justify-between">
+                  <span style={{ color: "var(--text-faint)" }}>Updated</span>
                   <span style={{ color: "var(--text-muted)" }}>
                     {new Date(post._updatedAt).toLocaleDateString("en-GB", {
                       day: "numeric",
@@ -625,6 +709,25 @@ export default function BlogPostEditor({
                     })}
                   </span>
                 </div>
+              </div>
+
+              {/* Divider */}
+              <div
+                className="border-t pt-3"
+                style={{ borderColor: "var(--border)" }}
+              >
+                <p
+                  className="text-[10px] uppercase tracking-widest font-semibold mb-1.5"
+                  style={{ color: "var(--text-faint)" }}
+                >
+                  Sanity ID
+                </p>
+                <p
+                  className="font-mono text-[10px] truncate select-all"
+                  style={{ color: "var(--text-faint)" }}
+                >
+                  {post._id}
+                </p>
               </div>
             </div>
           )}
