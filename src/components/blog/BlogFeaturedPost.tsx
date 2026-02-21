@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import  Link  from 'next/link';
+import Image from 'next/image';
 import { Calendar, User, Clock, ArrowRight } from 'lucide-react';
 import { Badge } from '@/src/components/ui/badge';
 import { Button } from '@/src/components/ui/button';
@@ -31,10 +32,13 @@ const BlogFeaturedPost = ({ post, formatDate, getImageUrl }: BlogFeaturedPostPro
             {/* 16:9 Featured Image */}
             <AspectRatio ratio={16 / 9}>
               {imageUrl ? (
-                <img
+                <Image
                   src={imageUrl}
                   alt={post.title}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  fill
+                  className="object-cover transition-transform duration-700 group-hover:scale-105"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 90vw, 1200px"
+                  priority
                 />
               ) : (
                 <div className="w-full h-full bg-secondary flex items-center justify-center">

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import type { Booking, BookingStatus } from '@/types/types'
 import { updateBookingStatus, deleteBooking, sendManualEmail } from '@/src/app/actions/booking-actions'
-import ConfirmDialog from '@/src/components/shared/ConfirmDialog'
+import ConfirmDialog from '@/src/components/admin/shared/ConfirmDialog'
 import {
   CheckCircle, XCircle, Star, Mail, Trash2,
   Loader2, Eye, BookOpen

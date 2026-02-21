@@ -7,8 +7,8 @@ import { toast } from 'sonner'
 import { format } from 'date-fns'
 import type { Booking, BookingStatus, FilterState } from '@/types/types'
 import { updateBookingStatus, deleteBooking } from '@/src/app/actions/booking-actions'
-import StatusBadge from '@/src/components/shared/StatusBadge'
-import ConfirmDialog from '@/src/components/shared/ConfirmDialog'
+import {StatusBadge }from '@/src/components/admin/shared/StatusBadge'
+import ConfirmDialog from '@/src/components/admin/shared/ConfirmDialog'
 import {
   Search, RefreshCw, ChevronUp, ChevronDown,
   ChevronLeft, ChevronRight, Eye, CheckCircle,

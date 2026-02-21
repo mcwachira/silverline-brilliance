@@ -1,8 +1,5 @@
 'use server'
 
-// actions/booking-actions.ts
-// All booking mutations as Server Actions.
-// Authenticated via Supabase session (server-side).
 
 import { revalidatePath } from 'next/cache'
 import { createServerSupabaseClient } from '@/src/lib/supabase/server'

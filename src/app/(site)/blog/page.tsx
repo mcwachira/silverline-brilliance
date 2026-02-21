@@ -31,6 +31,8 @@ interface BlogPageProps {
   }>;
 }
 
+export const revalidate = 300; // Revalidate every 5 minutes
+
 export default async function BlogPage({searchParams}: BlogPageProps) {
 
   const params = await searchParams;

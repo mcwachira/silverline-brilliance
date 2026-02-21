@@ -5,7 +5,7 @@
 import { revalidatePath } from 'next/cache'
 import { createServerSupabaseClient } from '@/src/lib/supabase/server'
 import {
-  publishPost, unpublishPost, duplicatePost, deletePost, updatePost
+  publishBlogPost as publishPost, unpublishBlogPost as unpublishPost, duplicateBlogPost as duplicatePost, deleteBlogPost as deletePost, updateBlogPost as updatePost
 } from '@/src/sanity/lib/sanity'
 
 async function requireAdmin() {

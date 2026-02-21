@@ -1,10 +1,4 @@
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[]
+
 
 export type Database = {
   // Allows to automatically instantiate createClient with right options
@@ -14,6 +8,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          notification_settings: Json | null
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+          notification_settings?: Json | null
+          role?: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          notification_settings?: Json | null
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       bookings: {
         Row: {
           assigned_to: string | null
@@ -92,6 +116,57 @@ export type Database = {
           updated_at?: string
           venue_address?: string | null
           venue_name?: string
+        }
+        Relationships: []
+      }
+      contact_messages: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          email: string
+          full_name: string
+          how_heard: string | null
+          id: string
+          message: string
+          phone: string | null
+          reference: string
+          replied_at: string | null
+          service: string | null
+          status: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          email: string
+          full_name: string
+          how_heard?: string | null
+          id?: string
+          message: string
+          phone?: string | null
+          reference: string
+          replied_at?: string | null
+          service?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string
+          how_heard?: string | null
+          id?: string
+          message?: string
+          phone?: string | null
+          reference?: string
+          replied_at?: string | null
+          service?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -181,6 +256,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      custom_access_token_hook: { Args: { event: Json }; Returns: Json }
       unsubscribe_email: { Args: { subscriber_email: string }; Returns: Json }
     }
     Enums: {

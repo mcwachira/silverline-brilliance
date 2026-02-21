@@ -1,5 +1,7 @@
 "use client";
 
+import Image from 'next/image';
+
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -13,8 +15,8 @@ import {
   duplicateBlogPost,
 } from "@/src/sanity/lib/sanity";
 import type { BlogPost } from "@/types/types";
-import StatusBadge from "@/src/components/shared/StatusBadge";
-import ConfirmDialog from "@/src/components/shared/ConfirmDialog";
+import {StatusBadge} from "@/src/components/admin/shared/StatusBadge";
+import ConfirmDialog from "@/src/components/admin/shared/ConfirmDialog";
 import {
   Plus,
   Search,
@@ -27,7 +29,7 @@ import {
   EyeOff,
   FileText,
   ChevronDown,
-  Image,
+
 } from "lucide-react";
 import { urlFor } from "@/src/sanity/lib/sanity";
 
@@ -225,12 +227,14 @@ export default function BlogPage() {
                     <div className="flex items-center gap-3">
                       {post.featuredImage ? (
                         <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
-                          <img
+                          <Image
                             src={urlFor(post.featuredImage)
                               .width(80)
                               .height(80)
                               .url()}
                             alt={post.title}
+                            width={80}
+                            height={80}
                             className="w-full h-full object-cover"
                           />
                         </div>
@@ -239,10 +243,10 @@ export default function BlogPage() {
                           className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
                           style={{ background: "rgba(139,31,168,0.1)" }}
                         >
-                          <Image
+                          {/* <Image
                             className="w-4 h-4"
                             style={{ color: "var(--text-faint)" }}
-                          />
+                          /> */}
                         </div>
                       )}
                       <div className="min-w-0">

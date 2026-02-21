@@ -1,0 +1,2051 @@
+//Admin/dashboard/page.tsx
+import { Suspense } from "react";
+import { createServerSupabaseClient } from "@/src/lib/supabase/server";
+import { sanityClient, BLOG_POSTS_QUERY } from "@/src/sanity/lib/sanity";
+import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
+import StatCard from "@/src/components/admin/dashboard/StatCard";
+import RecentBookings from "@/src/components/admin/booking/RecentBookings";
+import BookingsByStatusChart from "@/src/components/admin/dashboard/BookingsByStatusChart";
+import {
+  CalendarDays,
+  FileText,
+  TrendingUp,
+  Users,
+  Clock,
+  CheckCircle2,
+} from "lucide-react";
+
+export const metadata = { title: "Overview" };
+
+async function getDashboardData() {
+  const supabase = await createServerSupabaseClient();
+  const now = new Date();
+
+  const [
+    { count: totalBookings },
+    { count: pendingBookings },
+    { count: confirmedBookings },
+    { count: thisMonthBookings },
+    { data: recentBookings },
+    { data: statusBreakdown },
+    blogPosts,
+  ] = await Promise.all([
+    supabase.from("bookings").select("*", { count: "exact", head: true }),
+    supabase
+      .from("bookings")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "pending"),
+    supabase
+      .from("bookings")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "confirmed"),
+    supabase
+      .from("bookings")
+      .select("*", { count: "exact", head: true })
+      .gte("created_at", startOfMonth(now).toISOString())
+      .lte("created_at", endOfMonth(now).toISOString()),
+    supabase
+      .from("bookings")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(5),
+    supabase.from("bookings").select("status"),
+    sanityClient
+      .fetch(`*[_type == "post"] { _id, title, status, _createdAt }`)
+      .catch(() => []),
+  ]);
+
+  // Status breakdown for chart
+  const statusCounts = (statusBreakdown ?? []).reduce(
+    (acc: Record<string, number>, row: { status: string }) => {
+      acc[row.status] = (acc[row.status] ?? 0) + 1;
+      return acc;
+    },
+    {},
+  );
+
+  const publishedPosts =
+    (blogPosts as Array<{ status: string }>)?.filter(
+      (p) => p.status === "published",
+    ).length ?? 0;
+
+  return {
+    stats: {
+      totalBookings: totalBookings ?? 0,
+      pendingBookings: pendingBookings ?? 0,
+      confirmedBookings: confirmedBookings ?? 0,
+      thisMonthBookings: thisMonthBookings ?? 0,
+      publishedPosts,
+    },
+    recentBookings: recentBookings ?? [],
+    statusCounts,
+  };
+}
+
+export default async function DashboardPage() {
+  const { stats, recentBookings, statusCounts } = await getDashboardData();
+
+  const statCards = [
+    {
+      title: "Total Bookings",
+      value: stats.totalBookings,
+      icon: CalendarDays,
+      color: "var(--purple)",
+      description: "All time",
+    },
+    {
+      title: "This Month",
+      value: stats.thisMonthBookings,
+      icon: TrendingUp,
+      color: "var(--gold)",
+      description: format(new Date(), "MMMM yyyy"),
+    },
+    {
+      title: "Pending Review",
+      value: stats.pendingBookings,
+      icon: Clock,
+      color: "#FFC107",
+      description: "Awaiting confirmation",
+    },
+    {
+      title: "Confirmed",
+      value: stats.confirmedBookings,
+      icon: CheckCircle2,
+      color: "#28A745",
+      description: "Upcoming events",
+    },
+    {
+      title: "Published Posts",
+      value: stats.publishedPosts,
+      icon: FileText,
+      color: "#17A2B8",
+      description: "Live on your site",
+    },
+  ];
+
+  return (
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Overview</h1>
+          <p className="page-subtitle">
+            Here&apos;s what&apos;s happening today —{" "}
+            {format(new Date(), "EEEE, MMMM do yyyy")}
+          </p>
+        </div>
+      </div>
+
+      {/* Stat Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+        {statCards.map((card) => (
+          <StatCard key={card.title} {...card} />
+        ))}
+      </div>
+
+      {/* Charts + Recent */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Status Chart */}
+        <div className="card p-5 lg:col-span-1">
+          <h2
+            className="text-base font-semibold mb-4"
+            style={{
+              fontFamily: "Playfair Display, serif",
+              color: "var(--text)",
+            }}
+          >
+            Bookings by Status
+          </h2>
+          <BookingsByStatusChart data={statusCounts} />
+        </div>
+
+        {/* Recent Bookings */}
+        <div className="card p-5 lg:col-span-2">
+          <div className="flex items-center justify-between mb-4">
+            <h2
+              className="text-base font-semibold"
+              style={{
+                fontFamily: "Playfair Display, serif",
+                color: "var(--text)",
+              }}
+            >
+              Recent Bookings
+            </h2>
+            <a
+              href="/admin/dashboard/bookings"
+              className="text-xs"
+              style={{ color: "var(--gold)" }}
+            >
+              View all →
+            </a>
+          </div>
+          <RecentBookings bookings={recentBookings} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+//Admin/dashboard/layout.tsx
+import { redirect } from 'next/navigation'
+import { createServerSupabaseClient } from '@/src/lib/supabase/server'
+import DashboardShell from '@/src/components/admin/dashboard/DashboardShell'
+import "../../../globals.css";
+
+export default async function DashboardLayout({ children}: { children: React.ReactNode  }) {
+  const supabase = await createServerSupabaseClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) redirect('/admin/login')
+
+     // Fetch admin profile
+  const { data: profile } = await supabase
+    .from('admin_profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single()
+
+
+  return (
+
+        <html lang="en">
+      <body className="antialiased">
+    <DashboardShell user={user} profile={profile}>
+      {children}
+    </DashboardShell>
+      </body>
+    </html>
+
+  )
+}
+
+//Admin/dashboard/dashboard-action.ts
+
+"use server";
+
+import { createServerSupabaseClient } from "@/src/lib/supabase/server";
+import type { DashboardStats, ActivityItem, ActionResult } from "@/types/admin";
+
+// ── Dashboard stats ───────────────────────────────────────────────
+
+export async function getDashboardStats(): Promise<ActionResult<DashboardStats>> {
+  const supabase = await createServerSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Unauthorised" };
+
+  const now      = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+  // Run all counts in parallel
+  const [
+    bookingsAll,
+    bookingsMonth,
+    bookingsPending,
+    bookingsConfirmed,
+    quotesAll,
+    quotesAccepted,
+    posts,
+    messages,
+  ] = await Promise.all([
+    supabase.from("bookings").select("id", { count: "exact", head: true }),
+    supabase.from("bookings").select("id", { count: "exact", head: true }).gte("created_at", monthStart),
+    supabase.from("bookings").select("id", { count: "exact", head: true }).eq("status", "pending"),
+    supabase.from("bookings").select("id", { count: "exact", head: true }).eq("status", "confirmed"),
+    supabase.from("quotes").select("id", { count: "exact", head: true }),
+    supabase.from("quotes").select("id", { count: "exact", head: true }).eq("status", "accepted"),
+    supabase.from("blog_posts").select("id", { count: "exact", head: true }).eq("status", "published"),
+    supabase.from("contact_messages").select("id", { count: "exact", head: true }).eq("status", "unread"),
+  ]);
+
+  // Accepted quotes value
+  const { data: acceptedQuotes } = await supabase
+    .from("quotes")
+    .select("total")
+    .eq("status", "accepted");
+
+  const total_quote_value = (acceptedQuotes ?? []).reduce(
+    (sum: number, q: { total: number }) => sum + (q.total ?? 0),
+    0
+  );
+
+  const stats: DashboardStats = {
+    total_bookings:      bookingsAll.count        ?? 0,
+    bookings_this_month: bookingsMonth.count      ?? 0,
+    pending_bookings:    bookingsPending.count     ?? 0,
+    confirmed_bookings:  bookingsConfirmed.count  ?? 0,
+    total_quotes:        quotesAll.count          ?? 0,
+    accepted_quotes:     quotesAccepted.count     ?? 0,
+    total_quote_value,
+    published_posts:     posts.count              ?? 0,
+    unread_messages:     messages.count           ?? 0,
+  };
+
+  return { success: true, data: stats };
+}
+
+// ── Activity feed ─────────────────────────────────────────────────
+// Combines recent rows from bookings, quotes, messages, blog into a
+// single chronological timeline (most recent 20 events).
+
+export async function getActivityFeed(): Promise<ActionResult<ActivityItem[]>> {
+  const supabase = await createServerSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Unauthorised" };
+
+  const [bookings, quotes, messages, posts] = await Promise.all([
+    supabase
+      .from("bookings")
+      .select("id, reference, client_name, event_name, status, created_at")
+      .order("created_at", { ascending: false })
+      .limit(6),
+    supabase
+      .from("quotes")
+      .select("id, quote_number, client_name, status, created_at")
+      .order("created_at", { ascending: false })
+      .limit(6),
+    supabase
+      .from("contact_messages")
+      .select("id, reference, full_name, subject, status, created_at")
+      .order("created_at", { ascending: false })
+      .limit(5),
+    supabase
+      .from("blog_posts")
+      .select("id, title, status, created_at")
+      .order("created_at", { ascending: false })
+      .limit(3),
+  ]);
+
+  const items: ActivityItem[] = [
+    ...(bookings.data ?? []).map((b) => ({
+      id:         `booking-${b.id}`,
+      type:       "booking" as const,
+      action:     b.status === "pending" ? "New booking request" : `Booking ${b.status}`,
+      subject:    `${b.client_name} — ${b.event_name}`,
+      status:     b.status,
+      created_at: b.created_at,
+    })),
+    ...(quotes.data ?? []).map((q) => ({
+      id:         `quote-${q.id}`,
+      type:       "quote" as const,
+      action:     q.status === "draft" ? "Quote created" : `Quote ${q.status}`,
+      subject:    `${q.quote_number} — ${q.client_name}`,
+      status:     q.status,
+      created_at: q.created_at,
+    })),
+    ...(messages.data ?? []).map((m) => ({
+      id:         `message-${m.id}`,
+      type:       "message" as const,
+      action:     "New contact message",
+      subject:    `${m.full_name} — ${m.subject}`,
+      status:     m.status,
+      created_at: m.created_at,
+    })),
+    ...(posts.data ?? []).map((p) => ({
+      id:         `blog-${p.id}`,
+      type:       "blog" as const,
+      action:     p.status === "published" ? "Post published" : "Post created",
+      subject:    p.title,
+      status:     p.status,
+      created_at: p.created_at,
+    })),
+  ]
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 20);
+
+  return { success: true, data: items };
+}
+
+// ── Recent bookings (for dashboard widget) ────────────────────────
+
+export async function getRecentBookings() {
+  const supabase = await createServerSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Unauthorised" as string, data: undefined };
+
+  const { data, error } = await supabase
+    .from("bookings")
+    .select("id, reference, client_name, event_name, event_date, services, status, created_at")
+    .order("created_at", { ascending: false })
+    .limit(5);
+
+  if (error) return { success: false, error: error.message, data: undefined };
+  return { success: true, data };
+}
+
+// ── Recent quotes (for dashboard widget) ─────────────────────────
+
+export async function getRecentQuotes() {
+  const supabase = await createServerSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Unauthorised" as string, data: undefined };
+
+  const { data, error } = await supabase
+    .from("quotes")
+    .select("id, quote_number, client_name, client_company, total, status, created_at")
+    .order("created_at", { ascending: false })
+    .limit(5);
+
+  if (error) return { success: false, error: error.message, data: undefined };
+  return { success: true, data };
+}
+
+//components/admin/dashboard/DashboardOverview.tsx
+
+import { createServerSupabaseClient } from '@/src/lib/supabase/server'
+import { sanityClient , BLOG_POSTS_QUERY } from '@/src/sanity/lib/sanity'
+import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns'
+import StatCard from '@/src/components/admin/dashboard/StatCard'
+import RecentBookings from '@/src/components/admin/booking/RecentBookings'
+import BookingsByStatusChart from '@/src/components/admin/dashboard/BookingsByStatusChart'
+import { CalendarDays, FileText, TrendingUp, Users, Clock, CheckCircle2 } from 'lucide-react'
+import type { Booking } from '@/types/booking'
+
+export const metadata = { title: 'Overview' }
+
+async function getDashboardData() {
+  const supabase = await createServerSupabaseClient()
+  const now = new Date()
+
+  const [
+    { count: totalBookings },
+    { count: pendingBookings },
+    { count: confirmedBookings },
+    { count: thisMonthBookings },
+    { data: recentBookings },
+    { data: statusBreakdown },
+    blogPosts,
+  ] = await Promise.all([
+    supabase.from('bookings').select('*', { count: 'exact', head: true }),
+    supabase.from('bookings').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+    supabase.from('bookings').select('*', { count: 'exact', head: true }).eq('status', 'confirmed'),
+    supabase.from('bookings').select('*', { count: 'exact', head: true })
+      .gte('created_at', startOfMonth(now).toISOString())
+      .lte('created_at', endOfMonth(now).toISOString()),
+    supabase.from('bookings').select('*').order('created_at', { ascending: false }).limit(5),
+    supabase.from('bookings').select('status'),
+    sanityClient.fetch(`*[_type == "post"] { _id, title, status, _createdAt }`).catch(() => []),
+  ])
+
+  // Status breakdown for chart
+  const statusCounts = (statusBreakdown ?? []).reduce((acc: Record<string, number>, row: { status: string }) => {
+    acc[row.status] = (acc[row.status] ?? 0) + 1
+    return acc
+  }, {})
+
+  const publishedPosts = (blogPosts as Array<{ status: string }>)?.filter((p) => p.status === 'published').length ?? 0
+
+  return {
+    stats: {
+      totalBookings: totalBookings ?? 0,
+      pendingBookings: pendingBookings ?? 0,
+      confirmedBookings: confirmedBookings ?? 0,
+      thisMonthBookings: thisMonthBookings ?? 0,
+      publishedPosts,
+    },
+    recentBookings: recentBookings as Booking[],
+    statusCounts,
+  }
+}
+
+export default async function DashboardPage() {
+  const { stats, recentBookings, statusCounts } = await getDashboardData()
+
+  const statCards = [
+    {
+      title: 'Total Bookings',
+      value: stats.totalBookings,
+      icon: CalendarDays,
+      color: 'var(--purple)',
+      description: 'All time',
+    },
+    {
+      title: 'This Month',
+      value: stats.thisMonthBookings,
+      icon: TrendingUp,
+      color: 'var(--gold)',
+      description: format(new Date(), 'MMMM yyyy'),
+    },
+    {
+      title: 'Pending Review',
+      value: stats.pendingBookings,
+      icon: Clock,
+      color: '#FFC107',
+      description: 'Awaiting confirmation',
+    },
+    {
+      title: 'Confirmed',
+      value: stats.confirmedBookings,
+      icon: CheckCircle2,
+      color: '#28A745',
+      description: 'Upcoming events',
+    },
+    {
+      title: 'Published Posts',
+      value: stats.publishedPosts,
+      icon: FileText,
+      color: '#17A2B8',
+      description: 'Live on your site',
+    },
+  ]
+
+  return (
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Overview</h1>
+          <p className="page-subtitle">Here&apos;s what&apos;s happening today — {format(new Date(), 'EEEE, MMMM do yyyy')}</p>
+        </div>
+      </div>
+
+      {/* Stat Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+        {statCards.map((card) => (
+          <StatCard key={card.title} {...card} />
+        ))}
+      </div>
+
+      {/* Charts + Recent */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Status Chart */}
+        <div className="card p-5 lg:col-span-1">
+          <h2 className="text-base font-semibold mb-4" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--text)' }}>
+            Bookings by Status
+          </h2>
+          <BookingsByStatusChart data={statusCounts} />
+        </div>
+
+        {/* Recent Bookings */}
+        <div className="card p-5 lg:col-span-2">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-semibold" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--text)' }}>
+              Recent Bookings
+            </h2>
+            <a href="//admin/dashboard/bookings" className="text-xs" style={{ color: 'var(--gold)' }}>
+              View all →
+            </a>
+          </div>
+          <RecentBookings bookings={recentBookings} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+//components/admin/dashboard/DashboardShell.tsx
+
+'use client'
+
+import { useState } from 'react'
+import { usePathname } from 'next/navigation'
+import Link from 'next/link'
+import { toast } from 'sonner'
+import { createClientSupabaseClient } from '@/src/lib/supabase/client'
+import { useRouter } from 'next/navigation'
+import type { User } from '@supabase/supabase-js'
+import type { AdminProfile } from '@/types/types'
+import {
+  LayoutDashboard, CalendarDays, FileText, Settings, LogOut,
+  Menu, X, Bell, ChevronLeft, Users, BarChart3, Mail,
+  ChevronDown
+} from 'lucide-react'
+
+const NAV_ITEMS = [
+  { href: '/admin/dashboard', label: 'Overview', icon: LayoutDashboard },
+  { href: '/admin/dashboard/bookings', label: 'Bookings', icon: CalendarDays },
+  { href: '/admin/dashboard/blog', label: 'Blog', icon: FileText },
+  { href: '/admin/dashboard/settings', label: 'Settings', icon: Settings },
+]
+
+interface Props {
+  children: React.ReactNode
+  user: User
+  profile: AdminProfile | null
+}
+
+export default function DashboardShell({ children, user, profile }: Props) {
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
+  const pathname = usePathname()
+  const router = useRouter()
+  const supabase = createClientSupabaseClient()
+
+  async function handleSignOut() {
+    await supabase.auth.signOut()
+    toast.success('Signed out')
+    router.push('/admin/login')
+  }
+
+  const displayName = profile?.full_name ?? user.email?.split('@')[0] ?? 'Admin'
+  const initials = displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+
+;
+
+  return (
+    <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg)' }}>
+
+      {/* ─── MOBILE OVERLAY ─── */}
+      {mobileSidebarOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm lg:hidden"
+          onClick={() => setMobileSidebarOpen(false)}
+        />
+      )}
+
+      {/* ─── SIDEBAR ─── */}
+      <aside
+        className={`
+          fixed inset-y-0 left-0 z-40 flex flex-col transition-all duration-300
+          lg:relative
+          ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+          ${sidebarOpen ? 'w-64' : 'w-[68px]'}
+        `}
+        style={{ background: 'var(--surface)', borderRight: '1px solid var(--border)' }}
+      >
+        {/* Logo */}
+        <div className="flex items-center gap-3 px-4 py-5 border-b" style={{ borderColor: 'var(--border)' }}>
+          <div className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center"
+            style={{ background: 'linear-gradient(135deg, var(--purple-dark), var(--purple))' }}>
+            <span className="text-xs font-bold" style={{ color: 'var(--gold)' }}>A</span>
+          </div>
+          {sidebarOpen && (
+            <div className="min-w-0">
+              <p className="text-sm font-semibold truncate" style={{ color: 'var(--text)', fontFamily: 'Playfair Display, serif' }}>
+                Admin
+              </p>
+              <p className="text-xs truncate" style={{ color: 'var(--text-faint)' }}>Dashboard</p>
+            </div>
+          )}
+          <button
+            onClick={() => setSidebarOpen((v) => !v)}
+            className="ml-auto btn-ghost p-1.5 hidden lg:flex"
+          >
+            <ChevronLeft className={`w-4 h-4 transition-transform duration-300 ${!sidebarOpen ? 'rotate-180' : ''}`} />
+          </button>
+        </div>
+
+        {/* Nav Items */}
+        <nav className="flex-1 py-4 overflow-y-auto">
+          <div className="space-y-0.5">
+            {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+              const isActive = href === '/dashboard'
+                ? pathname === '/dashboard'
+                : pathname.startsWith(href)
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={() => setMobileSidebarOpen(false)}
+                  className={`sidebar-link ${isActive ? 'active' : ''}`}
+                  title={!sidebarOpen ? label : undefined}
+                >
+                  <Icon className="flex-shrink-0 w-5 h-5" />
+                  {sidebarOpen && <span className="truncate">{label}</span>}
+                </Link>
+              )
+            })}
+          </div>
+        </nav>
+
+        {/* User area */}
+        <div className="p-3 border-t" style={{ borderColor: 'var(--border)' }}>
+          <div className={`flex items-center gap-3 p-2 rounded-lg ${sidebarOpen ? '' : 'justify-center'}`}>
+            <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
+              style={{ background: 'linear-gradient(135deg, var(--purple), var(--gold))', color: '#1a1225' }}>
+              {initials}
+            </div>
+            {sidebarOpen && (
+              <>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>{displayName}</p>
+                  <p className="text-xs truncate" style={{ color: 'var(--text-faint)' }}>{user.email}</p>
+                </div>
+                <button onClick={handleSignOut} className="btn-ghost p-1.5 flex-shrink-0" title="Sign out">
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      </aside>
+
+      {/* ─── MAIN AREA ─── */}
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+
+        {/* Navbar */}
+        <header className="flex items-center gap-3 px-6 py-4 border-b flex-shrink-0"
+          style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+
+          {/* Mobile menu toggle */}
+          <button
+            className="btn-ghost p-2 lg:hidden"
+            onClick={() => setMobileSidebarOpen(true)}
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+
+          {/* Breadcrumb-style title */}
+          <div className="flex-1">
+            <h1 className="text-lg font-semibold" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--text)' }}>
+              {NAV_ITEMS.find(n =>
+                n.href === '/dashboard'
+                  ? pathname === '/dashboard'
+                  : pathname.startsWith(n.href)
+              )?.label ?? 'Dashboard'}
+            </h1>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-2">
+            <button className="btn-ghost p-2 relative" title="Notifications">
+              <Bell className="w-5 h-5" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full" style={{ background: 'var(--gold)' }} />
+            </button>
+          </div>
+        </header>
+
+        {/* Content */}
+        <main className="flex-1 overflow-y-auto p-6">
+          {children}
+        </main>
+      </div>
+    </div>
+  )
+}
+
+//components/admin/dashboard/BookingsByStatusChart.tsx
+
+
+'use client'
+
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts'
+
+const COLORS: Record<string, string> = {
+  pending: '#FFC107',
+  confirmed: '#17A2B8',
+  completed: '#28A745',
+  cancelled: '#DC3545',
+  rescheduled: '#8B1FA8',
+}
+
+interface Props {
+  data: Record<string, number>
+}
+
+export default function BookingsByStatusChart({ data }: Props) {
+  const chartData = Object.entries(data)
+    .filter(([, count]) => count > 0)
+    .map(([status, count]) => ({
+      name: status.charAt(0).toUpperCase() + status.slice(1),
+      value: count,
+      status,
+    }))
+
+  if (chartData.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-40">
+        <p className="text-sm" style={{ color: 'var(--text-faint)' }}>No data yet</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="h-52">
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <Pie
+            data={chartData}
+            cx="50%"
+            cy="45%"
+            innerRadius={50}
+            outerRadius={75}
+            paddingAngle={3}
+            dataKey="value"
+          >
+            {chartData.map((entry, i) => (
+              <Cell key={i} fill={COLORS[entry.status] ?? '#6c757d'} strokeWidth={0} />
+            ))}
+          </Pie>
+          <Tooltip
+            contentStyle={{
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border)',
+              borderRadius: '8px',
+              fontSize: '12px',
+              color: 'var(--text)',
+            }}
+            formatter={(value: number, name: string) => [value, name]}
+          />
+          <Legend
+            iconType="circle"
+            iconSize={8}
+            wrapperStyle={{ fontSize: '11px', color: 'var(--text-faint)' }}
+          />
+        </PieChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
+//components/admin/dashboard/StatCard.tsx
+import type { LucideIcon } from 'lucide-react'
+
+interface Props {
+  title: string
+  value: number
+  icon: LucideIcon
+  color: string
+  description?: string
+}
+
+export default function StatCard({ title, value, icon: Icon, color, description }: Props) {
+  return (
+    <div className="stat-card card-hover cursor-default">
+      <div className="flex items-start justify-between mb-3">
+        <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+          style={{ background: `${color}18`, border: `1px solid ${color}30` }}>
+          <Icon className="w-4.5 h-4.5" style={{ color }} />
+        </div>
+      </div>
+      <p className="text-3xl font-bold mb-1" style={{ color: 'var(--text)', fontFamily: 'Playfair Display, serif' }}>
+        {value.toLocaleString()}
+      </p>
+      <p className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>{title}</p>
+      {description && (
+        <p className="text-xs mt-1" style={{ color: 'var(--text-faint)' }}>{description}</p>
+      )}
+    </div>
+  )
+}
+
+types/admin.ts
+export type QuoteStatus = "draft" | "sent" | "accepted" | "rejected" | "expired";
+export type BookingStatus = "pending" | "reviewing" | "confirmed" | "completed" | "rejected";
+export type BlogPostStatus = "draft" | "published" | "scheduled";
+
+export interface QuoteLineItem {
+  id: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  total: number;
+}
+
+export interface Quote {
+  id: string;
+  reference: string;
+  status: QuoteStatus;
+  company_name: string;
+  company_email: string | null;
+  company_phone: string | null;
+  company_address: string | null;
+  company_logo_url: string | null;
+  client_name: string;
+  client_email: string | null;
+  client_company: string | null;
+  template: "classic" | "modern" | "minimal";
+  quote_number: string;
+  issue_date: string;
+  valid_until: string | null;
+  line_items: QuoteLineItem[];
+  discount: number;
+  tax: number;
+  subtotal: number;
+  discount_amount: number;
+  tax_amount: number;
+  total: number;
+  notes: string | null;
+  payment_terms: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  full_name: string;
+  role: 'admin' | 'editor' | 'author';
+  avatar_url?: string;
+  is_active: boolean;
+  last_login?: string;
+  created_at: string;
+}
+
+
+// ── Booking ───────────────────────────────────────────────────────
+
+export interface Booking {
+  id: string;
+  reference: string;
+  status: BookingStatus;
+
+  // Client
+  client_name: string;
+  client_email: string;
+  client_phone: string | null;
+  client_company: string | null;
+
+  // Event
+  event_name: string;
+  event_type: string;
+  event_date: string;          // ISO date
+  event_end_date: string | null;
+  venue: string | null;
+  attendees: number | null;
+
+  // Services
+  services: string[];          // e.g. ["Live Streaming", "Lighting"]
+
+  // Internal
+  admin_notes: string | null;
+  quote_id: string | null;     // linked quote if any
+
+  created_at: string;
+  updated_at: string;
+}
+
+// ── Blog Post ─────────────────────────────────────────────────────
+
+export interface BlogPost {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  content: string | null;         // markdown / plain text
+  featured_image_url: string | null;
+  status: BlogPostStatus;
+  published_at: string | null;
+  scheduled_at: string | null;
+  author_name: string;
+  categories: string[];
+  tags: string[];
+  meta_title: string | null;
+  meta_description: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// ── Dashboard stats ───────────────────────────────────────────────
+
+export interface DashboardStats {
+  total_bookings: number;
+  bookings_this_month: number;
+  pending_bookings: number;
+  confirmed_bookings: number;
+  total_quotes: number;
+  accepted_quotes: number;
+  total_quote_value: number;
+  published_posts: number;
+  unread_messages: number;
+}
+
+export interface ActivityItem {
+  id: string;
+  type: "booking" | "quote" | "message" | "blog";
+  action: string;   // e.g. "New booking request"
+  subject: string;  // e.g. "James Mwangi — Corporate Gala"
+  status?: string;
+  created_at: string;
+}
+
+
+// ── Admin profile ────────────────────────────────────────────────
+
+export interface AdminProfile {
+  id: string;
+  full_name: string | null;
+  email: string;
+  avatar_url: string | null;
+  phone: string | null;
+  role: "admin" | "super_admin";
+  notification_settings: NotificationSettings;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface NotificationSettings {
+  new_booking: boolean;
+  booking_confirmed: boolean;
+  new_message: boolean;
+  email_digest: boolean;
+}
+
+// ── Server action result ─────────────────────────────────────────
+
+export interface ActionResult<T = void> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
+
+export interface EmailTemplate {
+  id: string;
+  template_name: string;
+  template_type: string;
+  subject: string;
+  body_html: string;
+  body_text: string;
+  variables?: string[];
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MediaItem {
+  id: string;
+  filename: string;
+  original_filename: string;
+  file_url: string;
+  file_type: string;
+  mime_type?: string;
+  file_size?: number;
+  width?: number;
+  height?: number;
+  alt_text?: string;
+  caption?: string;
+  uploaded_by?: string;
+  uploaded_at: string;
+  folder?: string;
+  tags?: string[];
+}
+
+/types/types.ts
+// ============================================================
+// SUPABASE — MERGED & EXTENDED
+// ============================================================
+
+// ✅ Combined both status unions
+export type BookingStatus =
+  | 'pending'
+  | 'reviewing'
+  | 'confirmed'
+  | 'rejected'
+  | 'completed'
+  | 'cancelled'
+  | 'rescheduled'
+
+// Added from second file
+export type PaymentStatus =
+  | 'unpaid'
+  | 'deposit_paid'
+  | 'fully_paid'
+
+export type QuoteStatus = 'new' | 'contacted' | 'converted' | 'closed'
+export type PreferredContact = 'email' | 'phone' | 'whatsapp'
+
+// ------------------------------------------------------------
+// Activity + Reschedule
+// ------------------------------------------------------------
+
+export interface RescheduleRecord {
+  from_date: string
+  to_date: string
+  reason: string
+  rescheduled_at: string
+  rescheduled_by: string
+}
+
+export interface ActivityLogEntry {
+  action: string
+  performed_by: string
+  performed_at: string
+  details?: string
+}
+
+// ------------------------------------------------------------
+// Booking (merged version)
+// ------------------------------------------------------------
+
+export interface Booking {
+  id: string
+  booking_reference: string
+
+  // Contact
+  full_name: string
+  email: string
+  phone: string
+  company: string | null
+
+  // Event
+  event_name: string
+  event_type: string
+  event_date: string
+  event_start_time: string
+  event_end_time: string | null
+  expected_attendees: number
+  venue_name: string
+  venue_address: string | null
+
+  // Services
+  selected_services: string[]
+
+  // Additional
+  special_requirements: string | null
+  budget_range: string | null
+  how_heard: string | null
+  preferred_contact: string
+
+  // Pricing (NEW)
+  price_total?: number
+  price_deposit?: number
+  payment_status?: PaymentStatus
+
+  // Files (NEW)
+  uploaded_files?: string[]
+
+  // Rescheduling (NEW)
+  reschedule_reason?: string
+  reschedule_history?: RescheduleRecord[]
+
+  // Activity log (NEW)
+  activity_log?: ActivityLogEntry[]
+
+  // Admin
+  status: BookingStatus
+  internal_notes: string | null
+  assigned_to: string | null
+
+  // Timestamps
+  created_at: string
+  updated_at: string
+}
+
+// ------------------------------------------------------------
+// Newsletter (NEW)
+// ------------------------------------------------------------
+
+export interface Newsletter {
+  id: string
+  email: string
+  subscribed_at: string
+  status: 'active' | 'unsubscribed'
+}
+
+// ------------------------------------------------------------
+// Quote Request (unchanged)
+// ------------------------------------------------------------
+
+export interface QuoteRequest {
+  id: string
+  reference: string
+  name: string
+  email: string
+  phone: string
+  service?: string
+  event_date?: string
+  message?: string
+  status: QuoteStatus
+  created_at: string
+}
+
+// ------------------------------------------------------------
+// Admin Profile (merged)
+// ------------------------------------------------------------
+
+export interface AdminProfile {
+  id: string
+  email: string
+  full_name: string
+  avatar_url?: string
+  role: 'admin' | 'super_admin'
+  notification_settings?: {
+    new_booking: boolean
+    booking_cancelled: boolean
+    email_digest: boolean
+  }
+  created_at: string
+}
+
+// ============================================================
+// SANITY — MERGED SAFELY
+// ============================================================
+
+export interface SanityImage {
+  _type: 'image'
+  asset: { _ref: string; _type: 'reference' }
+  hotspot?: { x: number; y: number; height: number; width: number }
+  crop?: { top: number; bottom: number; left: number; right: number }
+  alt?: string
+}
+
+export interface SanitySlug {
+  current: string
+  _type?: 'slug'
+}
+
+export interface SanityAuthor {
+  _id: string
+  name: string
+  slug: SanitySlug
+  image?: SanityImage
+  bio?: unknown[] | string
+}
+
+// Keeping your original schema shape
+export interface SanityCategory {
+  _id: string
+  name?: string
+  title?: string
+  slug: SanitySlug
+  description?: string
+  color?: string
+}
+
+export interface SanityTag {
+  _id: string
+  title: string
+  slug: SanitySlug
+}
+
+// ------------------------------------------------------------
+// BlogPost (merged WITHOUT breaking yours)
+// ------------------------------------------------------------
+
+export type BlogPostStatus = 'draft' | 'published' | 'scheduled' | 'archived'
+
+export interface BlogPost {
+  _id: string
+  _createdAt: string
+  _updatedAt: string
+
+  title: string
+  slug: SanitySlug
+  excerpt?: string
+
+  // Support BOTH versions safely
+  content?: unknown[]      // your schema
+  body?: unknown[]         // second schema
+
+  mainImage?: SanityImage
+  featuredImage?: SanityImage
+
+  author?: SanityAuthor
+  categories?: SanityCategory[]
+  tags?: string[] | SanityTag[]
+
+  // Publishing
+  publishedAt?: string
+  scheduledAt?: string
+  status?: BlogPostStatus
+
+  // SEO (support both formats)
+  metaTitle?: string
+  metaDescription?: string
+  ogImage?: SanityImage
+
+  seo?: {
+    metaTitle?: string
+    metaDescription?: string
+    focusKeyword?: string
+  }
+
+  views?: number
+}
+
+// Derived helper (improved to handle scheduled)
+
+export function getBlogStatus(post: BlogPost): BlogPostStatus {
+  if (post.status) return post.status
+  if (post.scheduledAt) return 'scheduled'
+  return post.publishedAt ? 'published' : 'draft'
+}
+
+// ============================================================
+// QUOTE GENERATOR (unchanged)
+// ============================================================
+
+export type QuoteTemplate = 'classic' | 'modern' | 'minimal'
+
+export interface QuoteLineItem {
+  id: string
+  description: string
+  quantity: number
+  unitPrice: number
+}
+
+export interface QuoteData {
+  template: QuoteTemplate
+  logoDataUrl?: string
+  companyName: string
+  companyEmail: string
+  companyPhone: string
+  companyAddress?: string
+  clientName: string
+  clientEmail: string
+  clientCompany?: string
+  quoteNumber: string
+  quoteDate: string
+  validUntil?: string
+  lineItems: QuoteLineItem[]
+  taxRate: number
+  discount?: number
+  notes?: string
+  paymentTerms?: string
+}
+
+export function computeQuoteTotals(
+  items: QuoteLineItem[],
+  taxRate: number,
+  discount = 0
+) {
+  const subtotal = items.reduce((sum, i) => sum + i.quantity * i.unitPrice, 0)
+  const discountAmount = discount
+  const taxable = Math.max(0, subtotal - discountAmount)
+  const tax = (taxable * taxRate) / 100
+  const total = taxable + tax
+  return { subtotal, discountAmount, taxable, tax, total }
+}
+
+// ============================================================
+// UI TYPES (extended)
+// ============================================================
+
+export interface TableColumn<T = unknown> {
+  key: string
+  label: string
+  sortable?: boolean
+  render?: (value: unknown, row: T) => React.ReactNode
+}
+
+export interface PaginationState {
+  page: number
+  pageSize: number
+  total: number
+}
+
+export interface FilterState {
+  search: string
+  status?: BookingStatus | 'all'
+  dateFrom?: string
+  dateTo?: string
+  serviceType?: string
+}
+
+export interface ToastMessage {
+  id: string
+  type: 'success' | 'error' | 'warning' | 'info'
+  title: string
+  description?: string
+}
+
+export interface ConfirmDialogProps {
+  open: boolean
+  title: string
+  description: string
+  confirmLabel?: string
+  cancelLabel?: string
+  variant?: 'default' | 'destructive'
+  onConfirm: () => void
+  onCancel: () => void
+}
+
+// ============================================================
+// EMAIL TYPES (NEW)
+// ============================================================
+
+export interface EmailTemplate {
+  to: strings
+  subject: string
+  html: string
+  text?: string
+}
+
+export type EmailEvent =
+  | 'booking_created'
+  | 'booking_confirmed'
+  | 'booking_rescheduled'
+  | 'booking_cancelled'
+  | 'booking_completed'
+
+export interface EmailPayload {
+  event: EmailEvent
+  booking: Booking
+  adminEmail?: string
+}
+
+// ============================================================
+// Blog Edit Page
+// ============================================================
+export type PostFormData = {
+  title: string
+  slug: string
+  excerpt: string
+  authorId: string
+  categoryIds: string[]
+  tags: string[]
+  metaTitle: string
+  metaDescription: string
+}
+
+export function slugify(str: string) {
+  return str
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+//globals.css
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --font-sans: var(--font-geist-sans);
+    --font-mono: var(--font-geist-mono);
+    --color-sidebar-ring: var(--sidebar-ring);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar: var(--sidebar);
+    --color-chart-5: var(--chart-5);
+    --color-chart-4: var(--chart-4);
+    --color-chart-3: var(--chart-3);
+    --color-chart-2: var(--chart-2);
+    --color-chart-1: var(--chart-1);
+    --color-ring: var(--ring);
+    --color-input: var(--input);
+    --color-border: var(--border);
+    --color-destructive: var(--destructive);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-accent: var(--accent);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-muted: var(--muted);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-secondary: var(--secondary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-primary: var(--primary);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-popover: var(--popover);
+    --color-card-foreground: var(--card-foreground);
+    --color-card: var(--card);
+    --radius-sm: calc(var(--radius) - 4px);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) + 4px);
+    --radius-2xl: calc(var(--radius) + 8px);
+    --radius-3xl: calc(var(--radius) + 12px);
+    --radius-4xl: calc(var(--radius) + 16px);
+}
+
+:root {
+    --radius: 0.75rem;
+
+    /* Primary Purple - OKLCH */
+    --primary: oklch(0.49 0.18 302);
+    --primary-foreground: oklch(1 0 0);
+    --primary-dark: oklch(0.35 0.2 295);
+    --primary-light: oklch(0.6 0.18 310);
+
+    /* Gold/Yellow Accent - OKLCH */
+    --accent: oklch(0.88 0.17 85);
+    --accent-foreground: oklch(0.25 0.15 295);
+    --accent-light: oklch(0.91 0.16 90);
+    --accent-dark: oklch(0.82 0.18 80);
+
+    /* Dark Purple/Navy Background - OKLCH */
+    --background: oklch(0.2 0.08 285);
+    --foreground: oklch(1 0 0);
+
+    /* Cards with glassmorphism - OKLCH */
+    --card: oklch(0.25 0.07 285);
+    --card-foreground: oklch(1 0 0);
+    --popover: oklch(0.25 0.07 285);
+    --popover-foreground: oklch(1 0 0);
+
+    /* Secondary - OKLCH */
+    --secondary: oklch(0.32 0.06 285);
+    --secondary-foreground: oklch(1 0 0);
+
+    /* Muted - OKLCH */
+    --muted: oklch(0.38 0.05 285);
+    --muted-foreground: oklch(0.75 0.03 285);
+
+    /* Semantic Colors - OKLCH */
+    --success: oklch(0.62 0.17 145);
+    --warning: oklch(0.85 0.15 85);
+    --destructive: oklch(0.63 0.26 29);
+    --destructive-foreground: oklch(1 0 0);
+    --info: oklch(0.65 0.15 220);
+
+    /* Borders - OKLCH */
+    --border: oklch(0.42 0.05 285);
+    --border-hover: oklch(0.5 0.08 285);
+    --input: oklch(0.38 0.05 285);
+
+    /* Ring - Gold */
+    --ring: oklch(0.88 0.17 85);
+
+    /* Chart colors */
+    --chart-1: oklch(0.49 0.18 302);
+    --chart-2: oklch(0.88 0.17 85);
+    --chart-3: oklch(0.7 0.15 315);
+    --chart-4: oklch(0.55 0.18 295);
+    --chart-5: oklch(0.45 0.2 310);
+
+    /* Sidebar */
+    --sidebar: oklch(0.2 0.08 285);
+    --sidebar-foreground: oklch(1 0 0);
+    --sidebar-primary: oklch(0.88 0.17 85);
+    --sidebar-primary-foreground: oklch(0.25 0.15 295);
+    --sidebar-accent: oklch(0.32 0.06 285);
+    --sidebar-accent-foreground: oklch(1 0 0);
+    --sidebar-border: oklch(0.42 0.05 285);
+    --sidebar-ring: oklch(0.88 0.17 85);
+
+    /* Additional semantic colors */
+    --text: oklch(0.95 0.01 285);
+    --text-muted: oklch(0.72 0.04 285);
+    --text-faint: oklch(0.55 0.05 285);
+    --surface: oklch(0.25 0.07 285);
+    --surface-2: oklch(0.28 0.07 285);
+}
+
+.dark {
+    /* Dark mode adjustments */
+    --background: oklch(0.15 0.09 285);
+    --foreground: oklch(0.98 0 0);
+    --card: oklch(0.22 0.08 285);
+    --card-foreground: oklch(0.98 0 0);
+    --popover: oklch(0.22 0.08 285);
+    --popover-foreground: oklch(0.98 0 0);
+    --primary: oklch(0.55 0.18 302);
+    --primary-foreground: oklch(1 0 0);
+    --secondary: oklch(0.28 0.07 285);
+    --secondary-foreground: oklch(0.98 0 0);
+    --muted: oklch(0.28 0.07 285);
+    --muted-foreground: oklch(0.7 0.04 285);
+    --accent: oklch(0.88 0.17 85);
+    --accent-foreground: oklch(0.2 0.1 295);
+    --destructive: oklch(0.63 0.26 29);
+    --border: oklch(0.35 0.05 285);
+    --input: oklch(0.3 0.06 285);
+    --ring: oklch(0.88 0.17 85);
+    --chart-1: oklch(0.55 0.18 302);
+    --chart-2: oklch(0.88 0.17 85);
+    --chart-3: oklch(0.75 0.15 315);
+    --chart-4: oklch(0.6 0.18 295);
+    --chart-5: oklch(0.5 0.2 310);
+    --sidebar: oklch(0.22 0.08 285);
+    --sidebar-foreground: oklch(0.98 0 0);
+    --sidebar-primary: oklch(0.88 0.17 85);
+    --sidebar-primary-foreground: oklch(0.2 0.1 295);
+    --sidebar-accent: oklch(0.28 0.07 285);
+    --sidebar-accent-foreground: oklch(0.98 0 0);
+    --sidebar-border: oklch(0.35 0.05 285);
+    --sidebar-ring: oklch(0.88 0.17 85);
+}
+
+@layer base {
+    * {
+        @apply border-border outline-ring/50;
+        scrollbar-width: thin;
+        scrollbar-color: var(--primary-dark) transparent;
+    }
+
+    html {
+        scroll-behavior: smooth;
+    }
+
+    body {
+        @apply bg-background text-foreground antialiased;
+        font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-size: 15px;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        font-family: 'Playfair Display', serif;
+        font-weight: 600;
+        line-height: 1.3;
+    }
+
+    ::selection {
+        background: oklch(0.49 0.18 302 / 0.35);
+        color: var(--accent);
+    }
+
+    /* Scrollbar styles */
+    ::-webkit-scrollbar {
+        width: 5px;
+        height: 5px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: var(--primary-dark);
+        border-radius: 99px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--primary);
+    }
+}
+
+/* Root layout */
+#root {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 2rem;
+    text-align: center;
+}
+
+/* Logo styles */
+.logo {
+    height: 6em;
+    padding: 1.5em;
+    will-change: filter;
+    transition: filter 300ms;
+}
+
+.logo:hover {
+    filter: drop-shadow(0 0 2em oklch(0.88 0.17 85 / 0.7));
+}
+
+.logo.react:hover {
+    filter: drop-shadow(0 0 2em oklch(0.7 0.15 200 / 0.7));
+}
+
+@keyframes logo-spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    a:nth-of-type(2) .logo {
+        animation: logo-spin infinite 20s linear;
+    }
+}
+
+.card {
+    padding: 2em;
+}
+
+.read-the-docs {
+    color: oklch(0.6 0.02 285);
+}
+
+@layer components {
+
+    /* ─── Sidebar ─────────────────────────────────────────── */
+    .sidebar {
+        @apply fixed left-0 top-0 h-full z-40 flex flex-col;
+        width: 256px;
+        background: var(--surface);
+        border-right: 1px solid var(--border);
+        transition: width 0.25s ease;
+    }
+
+    .sidebar.collapsed {
+        width: 68px;
+    }
+
+    .sidebar-link {
+        @apply flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-150 text-sm font-medium;
+        color: var(--text-muted);
+        margin: 2px 8px;
+    }
+
+    .sidebar-link:hover {
+        background: oklch(0.49 0.18 302 / 0.12);
+        color: var(--text);
+    }
+
+    .sidebar-link.active {
+        background: oklch(0.49 0.18 302 / 0.22);
+        color: var(--accent);
+        box-shadow: inset 3px 0 0 var(--accent);
+    }
+
+    /* ─── Cards ───────────────────────────────────────────── */
+    .card {
+        @apply rounded-xl;
+        background: var(--surface);
+        border: 1px solid var(--border);
+    }
+
+    .card-hover:hover {
+        border-color: var(--border-hover);
+        box-shadow: 0 0 0 1px oklch(0.49 0.18 302 / 0.2), 0 8px 24px oklch(0 0 0 / 0.4);
+        transform: translateY(-1px);
+        transition: all 0.15s ease;
+    }
+
+    /* ─── Glass Cards ───────────────────────────────────────── */
+    .glass-card {
+        background: oklch(0.25 0.07 285 / 0.4);
+        backdrop-filter: blur(40px);
+        border: 1px solid oklch(1 0 0 / 0.1);
+        box-shadow: 0 10px 40px oklch(0.15 0.09 285 / 0.5);
+    }
+
+    .glass-nav {
+        background: oklch(0.2 0.08 285 / 0.8);
+        backdrop-filter: blur(20px);
+        border-bottom: 1px solid oklch(1 0 0 / 0.1);
+    }
+
+    /* ─── Buttons ─────────────────────────────────────────── */
+    .btn-primary {
+        @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-150;
+        background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+        color: var(--accent-foreground);
+    }
+
+    .btn-primary:hover {
+        filter: brightness(1.08);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 16px oklch(0.88 0.17 85 / 0.3);
+    }
+
+    .btn-secondary {
+        @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150;
+        background: oklch(0.49 0.18 302 / 0.15);
+        color: var(--text);
+        border: 1px solid oklch(0.49 0.18 302 / 0.3);
+    }
+
+    .btn-secondary:hover {
+        background: oklch(0.49 0.18 302 / 0.25);
+        border-color: oklch(0.49 0.18 302 / 0.5);
+    }
+
+    .btn-ghost {
+        @apply inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150;
+        color: var(--text-muted);
+    }
+
+    .btn-ghost:hover {
+        background: oklch(1 0 0 / 0.05);
+        color: var(--text);
+    }
+
+    .btn-danger {
+        @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-150;
+        background: oklch(0.63 0.26 29 / 0.12);
+        color: var(--destructive);
+        border: 1px solid oklch(0.63 0.26 29 / 0.3);
+    }
+
+    .btn-danger:hover {
+        background: oklch(0.63 0.26 29 / 0.2);
+        border-color: oklch(0.63 0.26 29 / 0.5);
+    }
+
+    /* ─── Form Elements ───────────────────────────────────── */
+    .input {
+        @apply w-full rounded-lg px-3 py-2.5 text-sm transition-all duration-150 outline-none;
+        background: oklch(1 0 0 / 0.04);
+        border: 1px solid var(--border);
+        color: var(--text);
+    }
+
+    .input::placeholder {
+        color: var(--text-faint);
+    }
+
+    .input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px oklch(0.88 0.17 85 / 0.1);
+    }
+
+    .label {
+        @apply block text-sm font-medium mb-1.5;
+        color: var(--text-muted);
+    }
+
+    /* ─── Status Badges ───────────────────────────────────── */
+    .badge {
+        @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wide;
+    }
+
+    .badge-pending {
+        background: oklch(0.85 0.15 85 / 0.15);
+        color: var(--warning);
+        border: 1px solid oklch(0.85 0.15 85 / 0.3);
+    }
+
+    .badge-confirmed {
+        background: oklch(0.65 0.15 220 / 0.15);
+        color: var(--info);
+        border: 1px solid oklch(0.65 0.15 220 / 0.3);
+    }
+
+    .badge-completed {
+        background: oklch(0.62 0.17 145 / 0.15);
+        color: var(--success);
+        border: 1px solid oklch(0.62 0.17 145 / 0.3);
+    }
+
+    .badge-cancelled {
+        background: oklch(0.63 0.26 29 / 0.15);
+        color: var(--destructive);
+        border: 1px solid oklch(0.63 0.26 29 / 0.3);
+    }
+
+    .badge-rescheduled {
+        background: oklch(0.49 0.18 302 / 0.15);
+        color: oklch(0.75 0.15 315);
+        border: 1px solid oklch(0.49 0.18 302 / 0.3);
+    }
+
+    .badge-draft {
+        background: oklch(0.6 0.02 285 / 0.15);
+        color: oklch(0.6 0.02 285);
+        border: 1px solid oklch(0.6 0.02 285 / 0.3);
+    }
+
+    .badge-published {
+        background: oklch(0.62 0.17 145 / 0.15);
+        color: var(--success);
+        border: 1px solid oklch(0.62 0.17 145 / 0.3);
+    }
+
+    .badge-scheduled {
+        background: oklch(0.85 0.15 85 / 0.15);
+        color: var(--warning);
+        border: 1px solid oklch(0.85 0.15 85 / 0.3);
+    }
+
+    /* ─── Table ───────────────────────────────────────────── */
+    .data-table {
+        @apply w-full text-sm;
+        border-collapse: collapse;
+    }
+
+    .data-table th {
+        @apply px-4 py-3 text-left font-medium text-xs uppercase tracking-wider;
+        color: var(--text-faint);
+        border-bottom: 1px solid var(--border);
+    }
+
+    .data-table td {
+        @apply px-4 py-3.5;
+        color: var(--text-muted);
+        border-bottom: 1px solid oklch(1 0 0 / 0.04);
+    }
+
+    .data-table tr:hover td {
+        background: oklch(0.49 0.18 302 / 0.05);
+        color: var(--text);
+    }
+
+    /* ─── Gradients ───────────────────────────────────────── */
+    .gradient-primary {
+        background: linear-gradient(135deg, oklch(0.49 0.18 302), oklch(0.45 0.2 315));
+    }
+
+    .gradient-hero {
+        background: linear-gradient(180deg, oklch(0.35 0.2 295), oklch(0.49 0.18 302), oklch(0.5 0.18 320));
+    }
+
+    .gradient-card {
+        background: linear-gradient(145deg, oklch(0.28 0.07 285 / 0.8), oklch(0.25 0.07 285 / 0.6));
+    }
+
+    .gradient-accent {
+        background: linear-gradient(135deg, oklch(0.88 0.17 85), oklch(0.85 0.18 75));
+    }
+
+    .text-gradient-gold {
+        background: linear-gradient(135deg, oklch(0.88 0.17 85), oklch(0.85 0.18 75));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .text-gold-gradient {
+        background: linear-gradient(135deg, var(--accent), var(--accent-light));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .bg-purple-gradient {
+        background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 50%, var(--primary-light) 100%);
+    }
+
+    /* ─── Effects ─────────────────────────────────────────── */
+    .glow-gold {
+        box-shadow: 0 0 30px oklch(0.88 0.17 85 / 0.3);
+    }
+
+    .glow-purple {
+        box-shadow: 0 0 40px oklch(0.49 0.18 302 / 0.4);
+    }
+
+    .geometric-frame {
+        @apply relative;
+    }
+
+    .geometric-frame::before {
+        content: "";
+        @apply absolute -inset-4 border-2 rounded-lg;
+        border-color: oklch(0.88 0.17 85);
+        transform: translate(-8px, -8px);
+    }
+
+    .dot-pattern {
+        background-image: radial-gradient(circle, oklch(0.88 0.17 85) 1px, transparent 1px);
+        background-size: 20px 20px;
+    }
+
+    .floating-cloud {
+        @apply absolute opacity-30;
+        filter: blur(40px);
+        background: linear-gradient(180deg, oklch(1 0 0 / 0.3), transparent);
+    }
+
+    /* ─── Stat Cards ──────────────────────────────────────── */
+    .stat-card {
+        @apply rounded-xl p-5 relative overflow-hidden;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        transition: all 0.2s ease;
+    }
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--primary), var(--accent));
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+
+    .stat-card:hover::before {
+        opacity: 1;
+    }
+
+    /* ─── Page Header ─────────────────────────────────────── */
+    .page-header {
+        @apply flex items-start justify-between mb-6;
+    }
+
+    .page-title {
+        @apply text-2xl;
+        font-family: 'Playfair Display', serif;
+        background: linear-gradient(135deg, var(--accent), var(--accent-light));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .page-subtitle {
+        @apply text-sm mt-1;
+        color: var(--text-faint);
+    }
+}
+
+@layer utilities {
+    .animate-float {
+        animation: float 6s ease-in-out infinite;
+    }
+
+    .animate-float-delayed {
+        animation: float 6s ease-in-out infinite 2s;
+    }
+
+    .animate-glow-pulse {
+        animation: glow-pulse 3s ease-in-out infinite;
+    }
+
+    .animate-slide-up {
+        animation: slide-up 0.6s ease-out forwards;
+    }
+
+    .animate-fade-in {
+        animation: fade-in 0.8s ease-out forwards;
+    }
+
+    .animate-scale-in {
+        animation: scale-in 0.5s ease-out forwards;
+    }
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-20px);
+    }
+}
+
+@keyframes glow-pulse {
+
+    0%,
+    100% {
+        opacity: 0.5;
+        filter: blur(40px);
+    }
+
+    50% {
+        opacity: 0.8;
+        filter: blur(60px);
+    }
+}
+
+@keyframes slide-up {
+    from {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes scale-in {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}

@@ -13,7 +13,7 @@ import {
   ContactSchema,
   type ContactFormValues,
 } from "@/src/lib/validation/contact";
-import { submitContactForm } from "@/src/app/(site)/contact/action";
+import { submitContactForm } from "@/src/app/actions/contact-actions";
 
 const SERVICES = [
   "Live Streaming",

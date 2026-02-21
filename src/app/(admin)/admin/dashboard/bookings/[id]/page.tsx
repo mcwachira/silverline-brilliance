@@ -4,7 +4,7 @@ import { createServerSupabaseClient} from '@/src/lib/supabase/server'
 import type { Booking } from '@/types/types'
 import { format } from 'date-fns'
 import Link from 'next/link'
-import StatusBadge from '@/src/components/shared/StatusBadge'
+import StatusBadge from '@/src/components/admin/shared/StatusBadge'
 import BookingDetailActions from '@/src/components/admin/booking/BookingDetailActions'
 import {
   ArrowLeft, User, Calendar, MapPin, FileText,

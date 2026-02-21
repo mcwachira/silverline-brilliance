@@ -6,8 +6,13 @@ export const client = createClient({
   projectId,
   dataset,
   apiVersion,
-  useCdn: process.env.NODE_ENV === 'production',
-     token: process.env.SANITY_API_WRITE_TOKEN,
+  useCdn: true,
+  token: process.env.SANITY_API_WRITE_TOKEN,
+  perspective: 'published',
+  stega: {
+    enabled: process.env.NODE_ENV === 'development',
+    studioUrl: '/studio'
+  }
 });
 
 
