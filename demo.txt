@@ -1,0 +1,141 @@
+I have attached:
+
+1) A .txt file containing the blog part of  my dashboard
+2) Images/screenshots of the current dashboard UI
+
+Context:
+- Built with Next.js (App Router)
+- Tailwind CSS v4
+- shadcn/ui components
+- React Hook Form
+- Server Actions
+- TypeScript
+
+IMPORTANT:
+For now, focus ONLY on the main dashboard page and its related components.
+Ignore other dashboard sections — I will attach them later.
+
+Your PRIMARY goal is to significantly improve the UI and visual design of the dashboard.
+
+---------------------------------------------------------------------
+
+🎯 MAIN PRIORITY: UI / UX IMPROVEMENT (80% focus)
+
+Using the attached dashboard screenshots as reference:
+
+1️⃣ Improve Overall Layout
+- Improve spacing and alignment
+- Improve content density
+- Improve visual hierarchy
+- Improve typography scale
+- Improve card design
+- Improve section separation
+- Improve grid structure
+- Improve sidebar/header if present
+
+2️⃣ Responsiveness
+- Make layout fully responsive
+- Mobile-first approach
+- Improve tablet layout
+- Improve dashboard card stacking
+- Improve tables on small screens
+- Improve overflow handling
+
+3️⃣ Visual Polish
+- Use the Tailwind CSS styles defined at the bottom of the attached code
+- Follow the design tokens and CSS variables
+- Improve color usage
+- Improve contrast
+- Improve shadows
+- Improve border usage
+- Improve rounded corners
+- Improve hover states
+- Add subtle transitions
+- Add loading skeletons where appropriate
+- Add smooth animations (but keep professional and subtle)
+
+4️⃣ shadcn/ui Optimization
+- Use Cards properly
+- Improve Tables styling
+- Improve Dialogs
+- Improve Form layout
+- Improve Buttons and badge usage
+- Improve empty states
+- Improve loading states
+
+Make it look:
+- Modern
+- Clean
+- Professional
+- Production-level SaaS quality
+
+Do NOT remove any functionality.
+
+---------------------------------------------------------------------
+
+🧠 SECONDARY PRIORITY: Types & Logic Review (20%)
+
+After UI improvements:
+
+5️⃣ TypeScript Review
+- Validate all types
+- Fix unsafe types
+- Remove any incorrect `any`
+- Ensure forms match server action types
+- Validate server action return types
+
+6️⃣ Server Actions Review
+- Ensure proper input validation
+- Ensure error handling
+- Improve type safety
+- Improve return types
+- Improve structure if needed
+
+7️⃣ Logic Review
+- Check business logic
+- Check async handling
+- Check form submission flow
+- Identify potential bugs
+- Avoid unnecessary re-renders
+
+---------------------------------------------------------------------
+
+📦 OUTPUT REQUIREMENTS (VERY IMPORTANT)
+
+- Provide FULL updated code for every file you modify.
+- Do NOT provide partial snippets.
+- Do NOT summarize only.
+- Clearly label each file:
+
+File: app/dashboard/page.tsx
+(then full code)
+
+File: components/dashboard/StatsCard.tsx
+(then full code)
+
+etc.
+
+Even if only small changes were made, provide the FULL updated file.
+
+If you create new components (recommended for better UI structure), provide their full code.
+
+---------------------------------------------------------------------
+
+⚠️ IMPORTANT CONSTRAINTS
+
+- Do NOT change the tech stack.
+- Do NOT replace shadcn/ui.
+- Do NOT simplify features.
+- Do NOT remove functionality.
+- Focus ONLY on dashboard page + its components.
+- Follow the CSS styles defined at the bottom of the attached file.
+- Use best modern Next.js App Router practices.
+
+---------------------------------------------------------------------
+
+Start with:
+1) A short visual/design critique of the current dashboard (based on the images).
+2) Then provide improved file-by-file code.
+3) Then list optional architectural suggestions at the end.
+
+Assume this is production SaaS software and improve it to that standard.

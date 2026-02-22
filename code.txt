@@ -1,227 +1,536 @@
-//Admin/dashboard/page.tsx
-import { Suspense } from "react";
-import { createServerSupabaseClient } from "@/src/lib/supabase/server";
-import { sanityClient, BLOG_POSTS_QUERY } from "@/src/sanity/lib/sanity";
-import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
-import StatCard from "@/src/components/admin/dashboard/StatCard";
-import RecentBookings from "@/src/components/admin/booking/RecentBookings";
-import BookingsByStatusChart from "@/src/components/admin/dashboard/BookingsByStatusChart";
+//Admin/dashboard/blog/page.tsx
+"use client";
+
+import Image from 'next/image';
+
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { toast } from "sonner";
+import { format } from "date-fns";
 import {
-  CalendarDays,
+  sanityClient,
+  BLOG_POSTS_ADMIN_QUERY,
+  deleteBlogPost,
+  publishBlogPost,
+  unpublishBlogPost,
+  duplicateBlogPost,
+} from "@/src/sanity/lib/sanity";
+import type { BlogPost } from "@/types/types";
+import {StatusBadge} from "@/src/components/admin/shared/StatusBadge";
+import ConfirmDialog from "@/src/components/admin/shared/ConfirmDialog";
+import {
+  Plus,
+  Search,
+  RefreshCw,
+  Eye,
+  Edit2,
+  Trash2,
+  Copy,
+  Globe,
+  EyeOff,
   FileText,
-  TrendingUp,
-  Users,
-  Clock,
-  CheckCircle2,
+  ChevronDown,
+
 } from "lucide-react";
+import { urlFor } from "@/src/sanity/lib/sanity";
 
-export const metadata = { title: "Overview" };
+export default function BlogPage() {
+  const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [filtered, setFiltered] = useState<BlogPost[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [deletePost, setDeletePost] = useState<BlogPost | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-async function getDashboardData() {
-  const supabase = await createServerSupabaseClient();
-  const now = new Date();
+  async function fetchPosts() {
+    setLoading(true);
+    try {
+      const data = await sanityClient.fetch(BLOG_POSTS_ADMIN_QUERY);
+      setPosts(data);
+    } catch {
+      toast.error("Failed to load blog posts");
+    } finally {
+      setLoading(false);
+    }
+  }
 
-  const [
-    { count: totalBookings },
-    { count: pendingBookings },
-    { count: confirmedBookings },
-    { count: thisMonthBookings },
-    { data: recentBookings },
-    { data: statusBreakdown },
-    blogPosts,
-  ] = await Promise.all([
-    supabase.from("bookings").select("*", { count: "exact", head: true }),
-    supabase
-      .from("bookings")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "pending"),
-    supabase
-      .from("bookings")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "confirmed"),
-    supabase
-      .from("bookings")
-      .select("*", { count: "exact", head: true })
-      .gte("created_at", startOfMonth(now).toISOString())
-      .lte("created_at", endOfMonth(now).toISOString()),
-    supabase
-      .from("bookings")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(5),
-    supabase.from("bookings").select("status"),
-    sanityClient
-      .fetch(`*[_type == "post"] { _id, title, status, _createdAt }`)
-      .catch(() => []),
-  ]);
+  useEffect(() => {
+    fetchPosts();
+  }, []);
 
-  // Status breakdown for chart
-  const statusCounts = (statusBreakdown ?? []).reduce(
-    (acc: Record<string, number>, row: { status: string }) => {
-      acc[row.status] = (acc[row.status] ?? 0) + 1;
-      return acc;
-    },
-    {},
-  );
+  useEffect(() => {
+    let result = posts;
+    if (search) {
+      const q = search.toLowerCase();
+      result = result.filter(
+        (p) =>
+          p.title?.toLowerCase().includes(q) ||
+          p.author?.name?.toLowerCase().includes(q),
+      );
+    }
+    if (statusFilter !== "all") {
+      result = result.filter((p) => p.status === statusFilter);
+    }
+    setFiltered(result);
+  }, [posts, search, statusFilter]);
 
-  const publishedPosts =
-    (blogPosts as Array<{ status: string }>)?.filter(
-      (p) => p.status === "published",
-    ).length ?? 0;
+  async function handleDelete() {
+    if (!deletePost) return;
+    setActionLoading(deletePost._id);
+    try {
+      await deleteBlogPost(deletePost._id);
+      toast.success("Post deleted");
+      setPosts(posts.filter((p) => p._id !== deletePost._id));
+    } catch {
+      toast.error("Failed to delete post");
+    } finally {
+      setActionLoading(null);
+      setDeletePost(null);
+    }
+  }
 
-  return {
-    stats: {
-      totalBookings: totalBookings ?? 0,
-      pendingBookings: pendingBookings ?? 0,
-      confirmedBookings: confirmedBookings ?? 0,
-      thisMonthBookings: thisMonthBookings ?? 0,
-      publishedPosts,
-    },
-    recentBookings: recentBookings ?? [],
-    statusCounts,
+  async function handlePublishToggle(post: BlogPost) {
+    setActionLoading(post._id);
+    try {
+      if (post.status === "published") {
+        await unpublishBlogPost(post._id);
+        toast.success("Post unpublished");
+      } else {
+        await publishBlogPost(post._id);
+        toast.success("Post published");
+      }
+      fetchPosts();
+    } catch {
+      toast.error("Failed to update post status");
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  async function handleDuplicate(post: BlogPost) {
+    setActionLoading(post._id);
+    try {
+      await duplicateBlogPost(post._id);
+      toast.success("Post duplicated as draft");
+      fetchPosts();
+    } catch {
+      toast.error("Failed to duplicate post");
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  const statusCounts = {
+    all: posts.length,
+    published: posts.filter((p) => p.status === "published").length,
+    draft: posts.filter((p) => p.status === "draft").length,
+    scheduled: posts.filter((p) => p.status === "scheduled").length,
   };
-}
-
-export default async function DashboardPage() {
-  const { stats, recentBookings, statusCounts } = await getDashboardData();
-
-  const statCards = [
-    {
-      title: "Total Bookings",
-      value: stats.totalBookings,
-      icon: CalendarDays,
-      color: "var(--purple)",
-      description: "All time",
-    },
-    {
-      title: "This Month",
-      value: stats.thisMonthBookings,
-      icon: TrendingUp,
-      color: "var(--gold)",
-      description: format(new Date(), "MMMM yyyy"),
-    },
-    {
-      title: "Pending Review",
-      value: stats.pendingBookings,
-      icon: Clock,
-      color: "#FFC107",
-      description: "Awaiting confirmation",
-    },
-    {
-      title: "Confirmed",
-      value: stats.confirmedBookings,
-      icon: CheckCircle2,
-      color: "#28A745",
-      description: "Upcoming events",
-    },
-    {
-      title: "Published Posts",
-      value: stats.publishedPosts,
-      icon: FileText,
-      color: "#17A2B8",
-      description: "Live on your site",
-    },
-  ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
       <div className="page-header">
         <div>
-          <h1 className="page-title">Overview</h1>
-          <p className="page-subtitle">
-            Here&apos;s what&apos;s happening today —{" "}
-            {format(new Date(), "EEEE, MMMM do yyyy")}
-          </p>
+          <h1 className="page-title">Blog</h1>
+          <p className="page-subtitle">{posts.length} posts total</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={fetchPosts}
+            className="btn-ghost p-2"
+            title="Refresh"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+          </button>
+          <Link href="/admin/dashboard/blog/new" className="btn-primary">
+            <Plus className="w-4 h-4" />
+            New Post
+          </Link>
         </div>
       </div>
 
-      {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
-        {statCards.map((card) => (
-          <StatCard key={card.title} {...card} />
+      {/* Status Tabs */}
+      <div className="flex gap-2 flex-wrap">
+        {Object.entries(statusCounts).map(([status, count]) => (
+          <button
+            key={status}
+            onClick={() => setStatusFilter(status)}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+              statusFilter === status ? "btn-primary" : "btn-secondary"
+            }`}
+          >
+            {status.charAt(0).toUpperCase() + status.slice(1)} ({count})
+          </button>
         ))}
       </div>
 
-      {/* Charts + Recent */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Status Chart */}
-        <div className="card p-5 lg:col-span-1">
-          <h2
-            className="text-base font-semibold mb-4"
-            style={{
-              fontFamily: "Playfair Display, serif",
-              color: "var(--text)",
-            }}
-          >
-            Bookings by Status
-          </h2>
-          <BookingsByStatusChart data={statusCounts} />
-        </div>
-
-        {/* Recent Bookings */}
-        <div className="card p-5 lg:col-span-2">
-          <div className="flex items-center justify-between mb-4">
-            <h2
-              className="text-base font-semibold"
-              style={{
-                fontFamily: "Playfair Display, serif",
-                color: "var(--text)",
-              }}
-            >
-              Recent Bookings
-            </h2>
-            <a
-              href="/admin/dashboard/bookings"
-              className="text-xs"
-              style={{ color: "var(--gold)" }}
-            >
-              View all →
-            </a>
-          </div>
-          <RecentBookings bookings={recentBookings} />
+      {/* Search */}
+      <div className="card p-4">
+        <div className="relative max-w-sm">
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
+            style={{ color: "var(--text-faint)" }}
+          />
+          <input
+            className="input pl-9"
+            placeholder="Search posts..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
       </div>
+
+      {/* Posts Grid / List */}
+      {loading ? (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="card h-48 animate-pulse"
+              style={{ background: "rgba(255,255,255,0.02)" }}
+            />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="card flex flex-col items-center justify-center py-16">
+          <FileText
+            className="w-12 h-12 mb-4"
+            style={{ color: "var(--text-faint)" }}
+          />
+          <p className="text-sm" style={{ color: "var(--text-faint)" }}>
+            {search ? "No posts match your search" : "No posts yet"}
+          </p>
+          {!search && (
+            <Link href="/dashboard/blog/new" className="btn-primary mt-4">
+              <Plus className="w-4 h-4" /> Create First Post
+            </Link>
+          )}
+        </div>
+      ) : (
+        <div className="card overflow-hidden">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Post</th>
+                <th>Status</th>
+                <th>Author</th>
+                <th>Categories</th>
+                <th>Published</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((post) => (
+                <tr key={post._id}>
+                  <td>
+                    <div className="flex items-center gap-3">
+                      {post.featuredImage ? (
+                        <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
+                          <Image
+                            src={urlFor(post.featuredImage)
+                              .width(80)
+                              .height(80)
+                              .url()}
+                            alt={post.title}
+                            width={80}
+                            height={80}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div
+                          className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                          style={{ background: "rgba(139,31,168,0.1)" }}
+                        >
+                          {/* <Image
+                            className="w-4 h-4"
+                            style={{ color: "var(--text-faint)" }}
+                          /> */}
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p
+                          className="font-medium text-sm truncate max-w-xs"
+                          style={{ color: "var(--text)" }}
+                        >
+                          {post.title}
+                        </p>
+                        <p
+                          className="text-xs truncate"
+                          style={{ color: "var(--text-faint)" }}
+                        >
+                          /{post.slug?.current}
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <StatusBadge status={post.status} />
+                  </td>
+                  <td>
+                    <span className="text-xs">{post.author?.name ?? "—"}</span>
+                  </td>
+                  <td>
+                    <div className="flex flex-wrap gap-1">
+                      {post.categories?.slice(0, 2).map((cat) => (
+                        <span
+                          key={cat._id}
+                          className="badge badge-draft text-xs"
+                          style={{ padding: "2px 6px" }}
+                        >
+                          {cat.title}
+                        </span>
+                      ))}
+                      {(post.categories?.length ?? 0) > 2 && (
+                        <span
+                          className="text-xs"
+                          style={{ color: "var(--text-faint)" }}
+                        >
+                          +{(post.categories?.length ?? 0) - 2}
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td>
+                    <span className="text-xs">
+                      {post.publishedAt
+                        ? format(new Date(post.publishedAt), "MMM d, yyyy")
+                        : "—"}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="flex items-center gap-1">
+                      <Link
+                        href={`/dashboard/blog/${post._id}`}
+                        className="btn-ghost p-1.5"
+                        title="Edit"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </Link>
+                      <button
+                        onClick={() => handlePublishToggle(post)}
+                        disabled={actionLoading === post._id}
+                        className="btn-ghost p-1.5"
+                        title={
+                          post.status === "published" ? "Unpublish" : "Publish"
+                        }
+                        style={{
+                          color:
+                            post.status === "published" ? "#FFC107" : "#28A745",
+                        }}
+                      >
+                        {post.status === "published" ? (
+                          <EyeOff className="w-3.5 h-3.5" />
+                        ) : (
+                          <Globe className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleDuplicate(post)}
+                        disabled={actionLoading === post._id}
+                        className="btn-ghost p-1.5"
+                        title="Duplicate"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => setDeletePost(post)}
+                        className="btn-ghost p-1.5"
+                        title="Delete"
+                        style={{ color: "#DC3545" }}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <ConfirmDialog
+        open={!!deletePost}
+        title="Delete Post"
+        description={`Permanently delete "${deletePost?.title}"? This cannot be undone.`}
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={handleDelete}
+        onCancel={() => setDeletePost(null)}
+      />
     </div>
   );
 }
 
+/admin/dashboard/blog/new/page.tsx
+"use client"
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
+import { sanityClient, CATEGORIES_QUERY, AUTHORS_QUERY } from '@/src/sanity/lib/sanity'
+import { type SanityCategory, type SanityAuthor, type PostFormData, slugify } from '@/types/types'
+import BlogPostEditor from '@/src/components/admin/blog/BlogPostEditor'
 
-//Admin/dashboard/layout.tsx
-import { redirect } from 'next/navigation'
-import { createServerSupabaseClient } from '@/src/lib/supabase/server'
-import DashboardShell from '@/src/components/admin/dashboard/DashboardShell'
-import "../../../globals.css";
 
-export default async function DashboardLayout({ children}: { children: React.ReactNode  }) {
-  const supabase = await createServerSupabaseClient()
+export default function NewBlogPostPage(){
+     const router = useRouter()
+  const [categories, setCategories] = useState<SanityCategory[]>([])
+  const [authors, setAuthors]       = useState<SanityAuthor[]>([])
+  const [loading, setLoading]   = useState(true)
 
-  const { data: { user } } = await supabase.auth.getUser()
+  useEffect(() => {
+    async function load(){
+        try{
+            const [cats, auths] = await Promise.all([
+                 sanityClient.fetch(CATEGORIES_QUERY),
+          sanityClient.fetch(AUTHORS_QUERY),
+            ])
+            setCategories(cats)
+        setAuthors(auths)
+        } catch{
+            toast.error("Failed to load categories/authors")
+        }finally{
+            setLoading(false)
+        }
+    }
 
-  if (!user) redirect('/admin/login')
+    load()
+  }, [])
 
-     // Fetch admin profile
-  const { data: profile } = await supabase
-    .from('admin_profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
+  async function handleSave(data: PostFormData, publish: boolean) {
+    const slug = data.slug || slugify(data.title)
 
+    const doc: Record<string, unknown> = {
+      _type: 'blogPost',
+      title: data.title,
+      slug: { _type: 'slug', current: slug },
+      excerpt: data.excerpt || undefined,
+      tags: data.tags,
+      metaTitle: data.metaTitle || undefined,
+      metaDescription: data.metaDescription || undefined,
+      author: data.authorId
+        ? { _type: 'reference', _ref: data.authorId }
+        : undefined,
+      categories: data.categoryIds.map(id => ({ _type: 'reference', _ref: id })),
+      publishedAt: publish ? new Date().toISOString() : undefined,
+    }
+
+    const created = await sanityClient.create(doc)
+    toast.success(publish ? 'Post published!' : 'Draft saved!')
+    router.push(`/dashboard/blog/${created._id}`)
+  }
 
   return (
-
-        <html lang="en">
-      <body className="antialiased">
-    <DashboardShell user={user} profile={profile}>
-      {children}
-    </DashboardShell>
-      </body>
-    </html>
-
+    <BlogPostEditor
+      mode="create"
+      categories={categories}
+      authors={authors}
+      loadingMeta={loading}
+      onSave={handleSave}
+    />
   )
 }
 
-//Admin/dashboard/dashboard-action.ts
+
+
+//admin/dashboard/blog/[id]/page.tsx
+
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter, useParams } from 'next/navigation'
+import { toast } from 'sonner'
+import { sanityClient, BLOG_POST_BY_ID_QUERY, CATEGORIES_QUERY, AUTHORS_QUERY } from '@/src/sanity/lib/sanity'
+import type { BlogPost, SanityCategory, SanityAuthor } from '@/types/types'
+import BlogPostEditor from '@/src/components/admin/blog/BlogPostEditor'
+import type { PostFormData } from '@/types/types'
+
+export default function EditBlogPostPage() {
+  const params = useParams()
+  const router = useRouter()
+  const id     = params.id as string
+
+  const [post, setPost]           = useState<BlogPost | null>(null)
+  const [categories, setCategories] = useState<SanityCategory[]>([])
+  const [authors, setAuthors]       = useState<SanityAuthor[]>([])
+  const [loading, setLoading]       = useState(true)
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const [p, cats, auths] = await Promise.all([
+          sanityClient.fetch(BLOG_POST_BY_ID_QUERY, { id }),
+          sanityClient.fetch(CATEGORIES_QUERY),
+          sanityClient.fetch(AUTHORS_QUERY),
+        ])
+        if (!p) { toast.error('Post not found'); router.push('/dashboard/blog'); return }
+        setPost(p)
+        setCategories(cats)
+        setAuthors(auths)
+      } catch {
+        toast.error('Failed to load post')
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [id])
+
+  async function handleSave(data: PostFormData, publish: boolean) {
+    const updates: Record<string, unknown> = {
+      title: data.title,
+      slug: { _type: 'slug', current: data.slug },
+      excerpt: data.excerpt || undefined,
+      tags: data.tags,
+      metaTitle: data.metaTitle || undefined,
+      metaDescription: data.metaDescription || undefined,
+      author: data.authorId
+        ? { _type: 'reference', _ref: data.authorId }
+        : undefined,
+      categories: data.categoryIds.map(rid => ({ _type: 'reference', _ref: rid })),
+    }
+
+    // Only set publishedAt if publishing and not already published
+    if (publish && !post?.publishedAt) {
+      updates.publishedAt = new Date().toISOString()
+    }
+    // Allow unpublishing (explicit null)
+    if (!publish && post?.publishedAt) {
+      await sanityClient.patch(id).unset(['publishedAt']).commit()
+    }
+
+    await sanityClient.patch(id).set(updates).commit()
+    toast.success(publish ? 'Post published!' : 'Draft saved!')
+    router.refresh()
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-4 max-w-4xl animate-pulse">
+        <div className="h-8 rounded-lg w-48 bg-white/5" />
+        <div className="card h-96 bg-white/[0.02]" />
+      </div>
+    )
+  }
+
+  if (!post) return null
+
+  return (
+    <BlogPostEditor
+      mode="edit"
+      post={post}
+      categories={categories}
+      authors={authors}
+      loadingMeta={false}
+      onSave={handleSave}
+    />
+  )
+}
+
+//Admin/dashboard/blog-action.ts
 
 "use server";
 
@@ -391,434 +700,644 @@ export async function getRecentQuotes() {
   return { success: true, data };
 }
 
-//components/admin/dashboard/DashboardOverview.tsx
+//components/admin/blog/BlogPOstEditor
 
-import { createServerSupabaseClient } from '@/src/lib/supabase/server'
-import { sanityClient , BLOG_POSTS_QUERY } from '@/src/sanity/lib/sanity'
-import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns'
-import StatCard from '@/src/components/admin/dashboard/StatCard'
-import RecentBookings from '@/src/components/admin/booking/RecentBookings'
-import BookingsByStatusChart from '@/src/components/admin/dashboard/BookingsByStatusChart'
-import { CalendarDays, FileText, TrendingUp, Users, Clock, CheckCircle2 } from 'lucide-react'
-import type { Booking } from '@/types/booking'
+"use client";
 
-export const metadata = { title: 'Overview' }
+import { useState, useTransition } from "react";
+import Link from "next/link";
+import { toast } from "sonner";
+import type {
+  BlogPost,
+  SanityCategory,
+  SanityAuthor,
+  PostFormData,
+} from "@/types/types";
+import { getBlogStatus, slugify } from "@/types/types";
 
-async function getDashboardData() {
-  const supabase = await createServerSupabaseClient()
-  const now = new Date()
-
-  const [
-    { count: totalBookings },
-    { count: pendingBookings },
-    { count: confirmedBookings },
-    { count: thisMonthBookings },
-    { data: recentBookings },
-    { data: statusBreakdown },
-    blogPosts,
-  ] = await Promise.all([
-    supabase.from('bookings').select('*', { count: 'exact', head: true }),
-    supabase.from('bookings').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-    supabase.from('bookings').select('*', { count: 'exact', head: true }).eq('status', 'confirmed'),
-    supabase.from('bookings').select('*', { count: 'exact', head: true })
-      .gte('created_at', startOfMonth(now).toISOString())
-      .lte('created_at', endOfMonth(now).toISOString()),
-    supabase.from('bookings').select('*').order('created_at', { ascending: false }).limit(5),
-    supabase.from('bookings').select('status'),
-    sanityClient.fetch(`*[_type == "post"] { _id, title, status, _createdAt }`).catch(() => []),
-  ])
-
-  // Status breakdown for chart
-  const statusCounts = (statusBreakdown ?? []).reduce((acc: Record<string, number>, row: { status: string }) => {
-    acc[row.status] = (acc[row.status] ?? 0) + 1
-    return acc
-  }, {})
-
-  const publishedPosts = (blogPosts as Array<{ status: string }>)?.filter((p) => p.status === 'published').length ?? 0
-
-  return {
-    stats: {
-      totalBookings: totalBookings ?? 0,
-      pendingBookings: pendingBookings ?? 0,
-      confirmedBookings: confirmedBookings ?? 0,
-      thisMonthBookings: thisMonthBookings ?? 0,
-      publishedPosts,
-    },
-    recentBookings: recentBookings as Booking[],
-    statusCounts,
-  }
-}
-
-export default async function DashboardPage() {
-  const { stats, recentBookings, statusCounts } = await getDashboardData()
-
-  const statCards = [
-    {
-      title: 'Total Bookings',
-      value: stats.totalBookings,
-      icon: CalendarDays,
-      color: 'var(--purple)',
-      description: 'All time',
-    },
-    {
-      title: 'This Month',
-      value: stats.thisMonthBookings,
-      icon: TrendingUp,
-      color: 'var(--gold)',
-      description: format(new Date(), 'MMMM yyyy'),
-    },
-    {
-      title: 'Pending Review',
-      value: stats.pendingBookings,
-      icon: Clock,
-      color: '#FFC107',
-      description: 'Awaiting confirmation',
-    },
-    {
-      title: 'Confirmed',
-      value: stats.confirmedBookings,
-      icon: CheckCircle2,
-      color: '#28A745',
-      description: 'Upcoming events',
-    },
-    {
-      title: 'Published Posts',
-      value: stats.publishedPosts,
-      icon: FileText,
-      color: '#17A2B8',
-      description: 'Live on your site',
-    },
-  ]
-
-  return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Overview</h1>
-          <p className="page-subtitle">Here&apos;s what&apos;s happening today — {format(new Date(), 'EEEE, MMMM do yyyy')}</p>
-        </div>
-      </div>
-
-      {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
-        {statCards.map((card) => (
-          <StatCard key={card.title} {...card} />
-        ))}
-      </div>
-
-      {/* Charts + Recent */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Status Chart */}
-        <div className="card p-5 lg:col-span-1">
-          <h2 className="text-base font-semibold mb-4" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--text)' }}>
-            Bookings by Status
-          </h2>
-          <BookingsByStatusChart data={statusCounts} />
-        </div>
-
-        {/* Recent Bookings */}
-        <div className="card p-5 lg:col-span-2">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--text)' }}>
-              Recent Bookings
-            </h2>
-            <a href="//admin/dashboard/bookings" className="text-xs" style={{ color: 'var(--gold)' }}>
-              View all →
-            </a>
-          </div>
-          <RecentBookings bookings={recentBookings} />
-        </div>
-      </div>
-    </div>
-  )
-}
-
-//components/admin/dashboard/DashboardShell.tsx
-
-'use client'
-
-import { useState } from 'react'
-import { usePathname } from 'next/navigation'
-import Link from 'next/link'
-import { toast } from 'sonner'
-import { createClientSupabaseClient } from '@/src/lib/supabase/client'
-import { useRouter } from 'next/navigation'
-import type { User } from '@supabase/supabase-js'
-import type { AdminProfile } from '@/types/types'
 import {
-  LayoutDashboard, CalendarDays, FileText, Settings, LogOut,
-  Menu, X, Bell, ChevronLeft, Users, BarChart3, Mail,
-  ChevronDown
-} from 'lucide-react'
-
-const NAV_ITEMS = [
-  { href: '/admin/dashboard', label: 'Overview', icon: LayoutDashboard },
-  { href: '/admin/dashboard/bookings', label: 'Bookings', icon: CalendarDays },
-  { href: '/admin/dashboard/blog', label: 'Blog', icon: FileText },
-  { href: '/admin/dashboard/settings', label: 'Settings', icon: Settings },
-]
+  ArrowLeft,
+  Save,
+  Globe,
+  Eye,
+  EyeOff,
+  Loader2,
+  Plus,
+  X,
+  Hash,
+  ChevronDown,
+} from "lucide-react";
 
 interface Props {
-  children: React.ReactNode
-  user: User
-  profile: AdminProfile | null
+  mode: "create" | "edit";
+  post?: BlogPost;
+  categories: SanityCategory[];
+  authors: SanityAuthor[];
+  loadingMeta: boolean;
+  onSave: (data: PostFormData, publish: boolean) => Promise<void>;
 }
 
-export default function DashboardShell({ children, user, profile }: Props) {
-  const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
-  const pathname = usePathname()
-  const router = useRouter()
-  const supabase = createClientSupabaseClient()
+export default function BlogPostEditor({
+  mode,
+  post,
+  categories,
+  authors,
+  loadingMeta,
+  onSave,
+}: Props) {
+  const [isPending, startTransition] = useTransition();
+  const [saveType, setSaveType] = useState<"draft" | "publish" | null>(null);
+  const [tagInput, setTagInput] = useState("");
 
-  async function handleSignOut() {
-    await supabase.auth.signOut()
-    toast.success('Signed out')
-    router.push('/admin/login')
+  const isPublished = post ? getBlogStatus(post) === "published" : false;
+
+  // ── Form state (seeded from existing post if editing) ──────────
+  const [form, setForm] = useState<PostFormData>({
+    title: post?.title ?? "",
+    slug: post?.slug?.current ?? "",
+    excerpt: post?.excerpt ?? "",
+    authorId: post?.author?._id ?? "",
+    categoryIds: post?.categories?.map((c) => c._id) ?? [],
+    tags: post?.tags ?? [],
+    metaTitle: post?.metaTitle ?? "",
+    metaDescription: post?.metaDescription ?? "",
+  });
+
+  const [slugManual, setSlugManual] = useState(mode === "edit");
+
+  // ── Helpers ────────────────────────────────────────────────────
+  function set<K extends keyof PostFormData>(key: K, val: PostFormData[K]) {
+    setForm((f) => ({ ...f, [key]: val }));
   }
 
-  const displayName = profile?.full_name ?? user.email?.split('@')[0] ?? 'Admin'
-  const initials = displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+  function handleTitleChange(title: string) {
+    set("title", title);
+    if (!slugManual) set("slug", slugify(title));
+  }
 
-;
+  function toggleCategory(id: string) {
+    set(
+      "categoryIds",
+      form.categoryIds.includes(id)
+        ? form.categoryIds.filter((c) => c !== id)
+        : [...form.categoryIds, id],
+    );
+  }
 
+  function addTag() {
+    const t = tagInput.trim().toLowerCase().replace(/\s+/g, "-");
+    if (!t) return;
+    if (form.tags.includes(t)) {
+      toast.error("Tag already added");
+      return;
+    }
+    set("tags", [...form.tags, t]);
+    setTagInput("");
+  }
+
+  function removeTag(t: string) {
+    set(
+      "tags",
+      form.tags.filter((x) => x !== t),
+    );
+  }
+
+  function validate(): boolean {
+    if (!form.title.trim()) {
+      toast.error("Title is required");
+      return false;
+    }
+    if (!form.slug.trim()) {
+      toast.error("Slug is required");
+      return false;
+    }
+    return true;
+  }
+
+  function handleSubmit(publish: boolean) {
+    if (!validate()) return;
+    setSaveType(publish ? "publish" : "draft");
+    startTransition(async () => {
+      try {
+        await onSave(form, publish);
+      } catch (e) {
+        toast.error((e as Error).message ?? "Save failed");
+      } finally {
+        setSaveType(null);
+      }
+    });
+  }
+
+  const busy = isPending;
+
+  // ── Render ─────────────────────────────────────────────────────
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg)' }}>
-
-      {/* ─── MOBILE OVERLAY ─── */}
-      {mobileSidebarOpen && (
-        <div
-          className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm lg:hidden"
-          onClick={() => setMobileSidebarOpen(false)}
-        />
-      )}
-
-      {/* ─── SIDEBAR ─── */}
-      <aside
-        className={`
-          fixed inset-y-0 left-0 z-40 flex flex-col transition-all duration-300
-          lg:relative
-          ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-          ${sidebarOpen ? 'w-64' : 'w-[68px]'}
-        `}
-        style={{ background: 'var(--surface)', borderRight: '1px solid var(--border)' }}
-      >
-        {/* Logo */}
-        <div className="flex items-center gap-3 px-4 py-5 border-b" style={{ borderColor: 'var(--border)' }}>
-          <div className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ background: 'linear-gradient(135deg, var(--purple-dark), var(--purple))' }}>
-            <span className="text-xs font-bold" style={{ color: 'var(--gold)' }}>A</span>
+    <div className="space-y-6 max-w-4xl">
+      {/* ── Header ── */}
+      <div className="page-header flex-wrap gap-4">
+        <div className="flex items-center gap-4">
+          <Link href="/dashboard/blog" className="btn-ghost p-2">
+            <ArrowLeft className="w-4 h-4" />
+          </Link>
+          <div>
+            <h1 className="page-title">
+              {mode === "create" ? "New Post" : "Edit Post"}
+            </h1>
+            <p className="page-subtitle">
+              {mode === "edit" && post
+                ? isPublished
+                  ? "✅ Published · changes save immediately"
+                  : "📝 Draft"
+                : "Manage in Sanity Studio for rich text editing"}
+            </p>
           </div>
-          {sidebarOpen && (
-            <div className="min-w-0">
-              <p className="text-sm font-semibold truncate" style={{ color: 'var(--text)', fontFamily: 'Playfair Display, serif' }}>
-                Admin
-              </p>
-              <p className="text-xs truncate" style={{ color: 'var(--text-faint)' }}>Dashboard</p>
-            </div>
-          )}
-          <button
-            onClick={() => setSidebarOpen((v) => !v)}
-            className="ml-auto btn-ghost p-1.5 hidden lg:flex"
-          >
-            <ChevronLeft className={`w-4 h-4 transition-transform duration-300 ${!sidebarOpen ? 'rotate-180' : ''}`} />
-          </button>
         </div>
 
-        {/* Nav Items */}
-        <nav className="flex-1 py-4 overflow-y-auto">
-          <div className="space-y-0.5">
-            {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-              const isActive = href === '/dashboard'
-                ? pathname === '/dashboard'
-                : pathname.startsWith(href)
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  onClick={() => setMobileSidebarOpen(false)}
-                  className={`sidebar-link ${isActive ? 'active' : ''}`}
-                  title={!sidebarOpen ? label : undefined}
-                >
-                  <Icon className="flex-shrink-0 w-5 h-5" />
-                  {sidebarOpen && <span className="truncate">{label}</span>}
-                </Link>
-              )
-            })}
-          </div>
-        </nav>
+        {/* Action buttons */}
+        <div className="flex items-center gap-2">
+          {mode === "edit" && post && (
+            <a
+              href={`${process.env.NEXT_PUBLIC_SANITY_STUDIO_URL ?? ""}/desk/blogPost;${post._id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-secondary text-sm"
+            >
+              <Eye className="w-4 h-4" /> Open in Studio
+            </a>
+          )}
 
-        {/* User area */}
-        <div className="p-3 border-t" style={{ borderColor: 'var(--border)' }}>
-          <div className={`flex items-center gap-3 p-2 rounded-lg ${sidebarOpen ? '' : 'justify-center'}`}>
-            <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
-              style={{ background: 'linear-gradient(135deg, var(--purple), var(--gold))', color: '#1a1225' }}>
-              {initials}
-            </div>
-            {sidebarOpen && (
+          <button
+            onClick={() => handleSubmit(false)}
+            disabled={busy}
+            className="btn-secondary text-sm"
+          >
+            {busy && saveType === "draft" ? (
               <>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>{displayName}</p>
-                  <p className="text-xs truncate" style={{ color: 'var(--text-faint)' }}>{user.email}</p>
-                </div>
-                <button onClick={handleSignOut} className="btn-ghost p-1.5 flex-shrink-0" title="Sign out">
-                  <LogOut className="w-4 h-4" />
-                </button>
+                <Loader2 className="w-4 h-4 animate-spin" /> Saving...
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" /> Save Draft
               </>
             )}
-          </div>
-        </div>
-      </aside>
-
-      {/* ─── MAIN AREA ─── */}
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-
-        {/* Navbar */}
-        <header className="flex items-center gap-3 px-6 py-4 border-b flex-shrink-0"
-          style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-
-          {/* Mobile menu toggle */}
-          <button
-            className="btn-ghost p-2 lg:hidden"
-            onClick={() => setMobileSidebarOpen(true)}
-          >
-            <Menu className="w-5 h-5" />
           </button>
 
-          {/* Breadcrumb-style title */}
-          <div className="flex-1">
-            <h1 className="text-lg font-semibold" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--text)' }}>
-              {NAV_ITEMS.find(n =>
-                n.href === '/dashboard'
-                  ? pathname === '/dashboard'
-                  : pathname.startsWith(n.href)
-              )?.label ?? 'Dashboard'}
-            </h1>
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-center gap-2">
-            <button className="btn-ghost p-2 relative" title="Notifications">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full" style={{ background: 'var(--gold)' }} />
-            </button>
-          </div>
-        </header>
-
-        {/* Content */}
-        <main className="flex-1 overflow-y-auto p-6">
-          {children}
-        </main>
-      </div>
-    </div>
-  )
-}
-
-//components/admin/dashboard/BookingsByStatusChart.tsx
-
-
-'use client'
-
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts'
-
-const COLORS: Record<string, string> = {
-  pending: '#FFC107',
-  confirmed: '#17A2B8',
-  completed: '#28A745',
-  cancelled: '#DC3545',
-  rescheduled: '#8B1FA8',
-}
-
-interface Props {
-  data: Record<string, number>
-}
-
-export default function BookingsByStatusChart({ data }: Props) {
-  const chartData = Object.entries(data)
-    .filter(([, count]) => count > 0)
-    .map(([status, count]) => ({
-      name: status.charAt(0).toUpperCase() + status.slice(1),
-      value: count,
-      status,
-    }))
-
-  if (chartData.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-40">
-        <p className="text-sm" style={{ color: 'var(--text-faint)' }}>No data yet</p>
-      </div>
-    )
-  }
-
-  return (
-    <div className="h-52">
-      <ResponsiveContainer width="100%" height="100%">
-        <PieChart>
-          <Pie
-            data={chartData}
-            cx="50%"
-            cy="45%"
-            innerRadius={50}
-            outerRadius={75}
-            paddingAngle={3}
-            dataKey="value"
+          <button
+            onClick={() => handleSubmit(true)}
+            disabled={busy}
+            className="btn-primary text-sm"
           >
-            {chartData.map((entry, i) => (
-              <Cell key={i} fill={COLORS[entry.status] ?? '#6c757d'} strokeWidth={0} />
-            ))}
-          </Pie>
-          <Tooltip
-            contentStyle={{
-              background: 'var(--surface-2)',
-              border: '1px solid var(--border)',
-              borderRadius: '8px',
-              fontSize: '12px',
-              color: 'var(--text)',
-            }}
-            formatter={(value: number, name: string) => [value, name]}
-          />
-          <Legend
-            iconType="circle"
-            iconSize={8}
-            wrapperStyle={{ fontSize: '11px', color: 'var(--text-faint)' }}
-          />
-        </PieChart>
-      </ResponsiveContainer>
-    </div>
-  )
-}
-
-//components/admin/dashboard/StatCard.tsx
-import type { LucideIcon } from 'lucide-react'
-
-interface Props {
-  title: string
-  value: number
-  icon: LucideIcon
-  color: string
-  description?: string
-}
-
-export default function StatCard({ title, value, icon: Icon, color, description }: Props) {
-  return (
-    <div className="stat-card card-hover cursor-default">
-      <div className="flex items-start justify-between mb-3">
-        <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-          style={{ background: `${color}18`, border: `1px solid ${color}30` }}>
-          <Icon className="w-4.5 h-4.5" style={{ color }} />
+            {busy && saveType === "publish" ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" /> Publishing...
+              </>
+            ) : isPublished ? (
+              <>
+                <EyeOff className="w-4 h-4" /> Update & Keep Published
+              </>
+            ) : (
+              <>
+                <Globe className="w-4 h-4" /> Publish
+              </>
+            )}
+          </button>
         </div>
       </div>
-      <p className="text-3xl font-bold mb-1" style={{ color: 'var(--text)', fontFamily: 'Playfair Display, serif' }}>
-        {value.toLocaleString()}
-      </p>
-      <p className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>{title}</p>
-      {description && (
-        <p className="text-xs mt-1" style={{ color: 'var(--text-faint)' }}>{description}</p>
-      )}
+
+      {/* ── Two column layout ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* ── Main column ── */}
+        <div className="lg:col-span-2 space-y-5">
+          {/* Title */}
+          <div className="card p-5 space-y-4">
+            <div>
+              <label className="label">Post Title *</label>
+              <input
+                className="input text-base"
+                placeholder="Enter a compelling title..."
+                value={form.title}
+                onChange={(e) => handleTitleChange(e.target.value)}
+                maxLength={100}
+              />
+              <p
+                className="text-xs mt-1 text-right"
+                style={{ color: "var(--text-faint)" }}
+              >
+                {form.title.length}/100
+              </p>
+            </div>
+
+            {/* Slug */}
+            <div>
+              <label className="label">
+                URL Slug *
+                <span
+                  className="ml-2 text-xs normal-case"
+                  style={{ color: "var(--text-faint)" }}
+                >
+                  yoursite.com/blog/
+                  <strong style={{ color: "var(--gold)" }}>
+                    {form.slug || "post-slug"}
+                  </strong>
+                </span>
+              </label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Hash
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5"
+                    style={{ color: "var(--text-faint)" }}
+                  />
+                  <input
+                    className="input pl-8 font-mono text-sm"
+                    placeholder="post-slug"
+                    value={form.slug}
+                    onChange={(e) => {
+                      setSlugManual(true);
+                      set(
+                        "slug",
+                        e.target.value
+                          .toLowerCase()
+                          .replace(/[^a-z0-9-]/g, "-")
+                          .replace(/-+/g, "-"),
+                      );
+                    }}
+                  />
+                </div>
+                {slugManual && (
+                  <button
+                    type="button"
+                    className="btn-ghost text-xs whitespace-nowrap"
+                    onClick={() => {
+                      setSlugManual(false);
+                      set("slug", slugify(form.title));
+                    }}
+                  >
+                    Auto
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Excerpt */}
+            <div>
+              <label className="label">
+                Excerpt{" "}
+                <span style={{ color: "var(--text-faint)" }}>
+                  (shown in blog list)
+                </span>
+              </label>
+              <textarea
+                className="input resize-none"
+                rows={3}
+                placeholder="A short description that appears in the blog listing..."
+                value={form.excerpt}
+                onChange={(e) => set("excerpt", e.target.value)}
+                maxLength={300}
+              />
+              <p
+                className="text-xs mt-1 text-right"
+                style={{ color: "var(--text-faint)" }}
+              >
+                {form.excerpt.length}/300
+              </p>
+            </div>
+          </div>
+
+          {/* Rich text notice */}
+          <div
+            className="rounded-xl p-4 flex items-start gap-3"
+            style={{
+              background: "rgba(255,215,0,0.06)",
+              border: "1px solid rgba(255,215,0,0.2)",
+            }}
+          >
+            <span className="text-xl flex-shrink-0">✍️</span>
+            <div>
+              <p
+                className="text-sm font-medium"
+                style={{ color: "var(--gold)" }}
+              >
+                Rich Text Content
+              </p>
+              <p
+                className="text-xs mt-0.5"
+                style={{ color: "var(--text-faint)" }}
+              >
+                Your post body uses Sanity's Portable Text editor which isn't
+                embeddable here.
+                {mode === "create"
+                  ? ' Save the draft first, then click "Open in Studio" to write the full content.'
+                  : ' Use the "Open in Studio" button above to edit the post body.'}
+              </p>
+            </div>
+          </div>
+
+          {/* SEO */}
+          <div className="card p-5 space-y-4">
+            <h3
+              className="text-sm font-semibold"
+              style={{
+                color: "var(--text)",
+                fontFamily: "Playfair Display,serif",
+              }}
+            >
+              SEO Settings
+            </h3>
+            <div>
+              <label className="label">
+                Meta Title{" "}
+                <span style={{ color: "var(--text-faint)" }}>
+                  (60 chars ideal)
+                </span>
+              </label>
+              <input
+                className="input"
+                placeholder="SEO title — defaults to post title if blank"
+                value={form.metaTitle}
+                onChange={(e) => set("metaTitle", e.target.value)}
+                maxLength={70}
+              />
+              <div className="flex justify-between mt-1">
+                <p
+                  className="text-xs"
+                  style={{
+                    color:
+                      form.metaTitle.length > 60
+                        ? "#FFC107"
+                        : "var(--text-faint)",
+                  }}
+                >
+                  {form.metaTitle.length > 60 ? "⚠ Getting long" : ""}
+                </p>
+                <p className="text-xs" style={{ color: "var(--text-faint)" }}>
+                  {form.metaTitle.length}/70
+                </p>
+              </div>
+            </div>
+            <div>
+              <label className="label">
+                Meta Description{" "}
+                <span style={{ color: "var(--text-faint)" }}>
+                  (160 chars ideal)
+                </span>
+              </label>
+              <textarea
+                className="input resize-none"
+                rows={2}
+                placeholder="Description shown in Google search results..."
+                value={form.metaDescription}
+                onChange={(e) => set("metaDescription", e.target.value)}
+                maxLength={180}
+              />
+              <div className="flex justify-between mt-1">
+                <p
+                  className="text-xs"
+                  style={{
+                    color:
+                      form.metaDescription.length > 160
+                        ? "#FFC107"
+                        : "var(--text-faint)",
+                  }}
+                >
+                  {form.metaDescription.length > 160 ? "⚠ Getting long" : ""}
+                </p>
+                <p className="text-xs" style={{ color: "var(--text-faint)" }}>
+                  {form.metaDescription.length}/180
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Sidebar column ── */}
+        <div className="space-y-5">
+          {/* Author */}
+          <div className="card p-4 space-y-3">
+            <h3
+              className="text-xs font-semibold uppercase tracking-wider"
+              style={{ color: "var(--text-faint)" }}
+            >
+              Author
+            </h3>
+            {loadingMeta ? (
+              <div className="h-9 rounded animate-pulse bg-white/5" />
+            ) : (
+              <div className="relative">
+                <select
+                  className="input appearance-none pr-8"
+                  value={form.authorId}
+                  onChange={(e) => set("authorId", e.target.value)}
+                  style={{ background: "rgba(255,255,255,0.04)" }}
+                >
+                  <option value="">No author selected</option>
+                  {authors.map((a) => (
+                    <option
+                      key={a._id}
+                      value={a._id}
+                      style={{ background: "var(--surface)" }}
+                    >
+                      {a.name}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+                  style={{ color: "var(--text-faint)" }}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Categories */}
+          <div className="card p-4 space-y-3">
+            <h3
+              className="text-xs font-semibold uppercase tracking-wider"
+              style={{ color: "var(--text-faint)" }}
+            >
+              Categories
+            </h3>
+            {loadingMeta ? (
+              <div className="space-y-2">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="h-8 rounded animate-pulse bg-white/5"
+                  />
+                ))}
+              </div>
+            ) : categories.length === 0 ? (
+              <p className="text-xs" style={{ color: "var(--text-faint)" }}>
+                No categories yet. Add them in Sanity Studio.
+              </p>
+            ) : (
+              <div className="space-y-1.5">
+                {categories.map((cat) => {
+                  const checked = form.categoryIds.includes(cat._id);
+                  return (
+                    <label
+                      key={cat._id}
+                      className="flex items-center gap-2.5 cursor-pointer group"
+                    >
+                      <div
+                        onClick={() => toggleCategory(cat._id)}
+                        className={`flex-shrink-0 w-4 h-4 rounded transition-all ${
+                          checked
+                            ? "bg-purple-500 border-purple-500"
+                            : "border border-white/20 bg-white/5"
+                        } flex items-center justify-center`}
+                        style={
+                          checked
+                            ? {
+                                background: "var(--purple)",
+                                borderColor: "var(--purple)",
+                              }
+                            : {}
+                        }
+                      >
+                        {checked && (
+                          <span className="text-white text-xs leading-none">
+                            ✓
+                          </span>
+                        )}
+                      </div>
+                      <span
+                        className="text-sm transition-colors"
+                        style={{
+                          color: checked ? "var(--text)" : "var(--text-muted)",
+                        }}
+                        onClick={() => toggleCategory(cat._id)}
+                      >
+                        {cat.name}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Tags */}
+          <div className="card p-4 space-y-3">
+            <h3
+              className="text-xs font-semibold uppercase tracking-wider"
+              style={{ color: "var(--text-faint)" }}
+            >
+              Tags
+            </h3>
+
+            {/* Existing tags */}
+            {form.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {form.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium"
+                    style={{
+                      background: "rgba(255,215,0,0.1)",
+                      color: "var(--gold)",
+                      border: "1px solid rgba(255,215,0,0.25)",
+                    }}
+                  >
+                    {tag}
+                    <button
+                      onClick={() => removeTag(tag)}
+                      className="hover:text-white transition-colors ml-0.5"
+                    >
+                      <X className="w-2.5 h-2.5" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Add tag */}
+            <div className="flex gap-2">
+              <input
+                className="input text-sm flex-1"
+                placeholder="Add tag..."
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addTag();
+                  }
+                }}
+              />
+              <button
+                type="button"
+                onClick={addTag}
+                className="btn-secondary p-2 flex-shrink-0"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-xs" style={{ color: "var(--text-faint)" }}>
+              Press Enter or + to add
+            </p>
+          </div>
+
+          {/* Post status summary */}
+          {mode === "edit" && post && (
+            <div
+              className="card p-4 space-y-2 text-xs"
+              style={{ color: "var(--text-faint)" }}
+            >
+              <h3 className="font-semibold uppercase tracking-wider">
+                Post Info
+              </h3>
+              <div className="space-y-1.5">
+                <div className="flex justify-between">
+                  <span>Status</span>
+                  <span
+                    style={{
+                      color: isPublished ? "#28A745" : "var(--text-muted)",
+                    }}
+                  >
+                    {isPublished ? "● Published" : "○ Draft"}
+                  </span>
+                </div>
+                {post.publishedAt && (
+                  <div className="flex justify-between">
+                    <span>Published</span>
+                    <span style={{ color: "var(--text-muted)" }}>
+                      {new Date(post.publishedAt).toLocaleDateString("en-GB", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span>Created</span>
+                  <span style={{ color: "var(--text-muted)" }}>
+                    {new Date(post._createdAt).toLocaleDateString("en-GB", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Last updated</span>
+                  <span style={{ color: "var(--text-muted)" }}>
+                    {new Date(post._updatedAt).toLocaleDateString("en-GB", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
-  )
+  );
 }
+
 
 types/admin.ts
 export type QuoteStatus = "draft" | "sent" | "accepted" | "rejected" | "expired";
