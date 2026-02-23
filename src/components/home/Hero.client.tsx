@@ -46,7 +46,7 @@ const Hero = () => {
           transition={{ delay: 0.4 }}
           className="mt-10 flex justify-center gap-4"
         >
-          <Button variant="hero" size="lg" asChild>
+          <Button variant="gold" size="lg" asChild>
             <Link href="/contact">
               Get Started <ArrowRight className="ml-2 w-5 h-5" />
             </Link>
