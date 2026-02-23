@@ -126,7 +126,7 @@ export function BlogCard({ post, variant = 'default', priority = false }: BlogCa
           {/* Category Badge */}
           <div className="absolute left-3 top-3">
             <span className="rounded-full bg-accent px-3 py-1 text-xs font-bold text-accent-foreground shadow-md">
-              {post.category.name}
+              {post?.category?.name}
             </span>
           </div>
         </div>
