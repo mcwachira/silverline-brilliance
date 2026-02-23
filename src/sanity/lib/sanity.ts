@@ -1,7 +1,37 @@
 import { createClient } from "next-sanity";
 import imageUrlBuilder from "@sanity/image-url";
-import type { SanityImageSource } from '@sanity/image-url/lib/types/types'
+import type { SanityImageSource } from "@sanity/image-url/lib/types/types";
 import { apiVersion, dataset, projectId, useCdn } from "../env";
+import type { PortableTextBlock } from "@portabletext/react";
+
+interface CreateBlogPostInput {
+  title: string;
+  slug: string;
+  authorId: string;
+  excerpt?: string;
+  content?: PortableTextBlock[];
+  categoryIds?: string[];
+  tags?: string[];
+  publishedAt?: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  mainImage?: {
+    _type: "image";
+    asset: {
+      _type: "reference";
+      _ref: string;
+    };
+    alt?: string;
+  };
+  ogImage?: {
+    _type: "image";
+    asset: {
+      _type: "reference";
+      _ref: string;
+    };
+    alt?: string;
+  };
+}
 
 // ─────────────────────────────────────────────────────────────
 // CLIENTS
@@ -235,7 +265,6 @@ export const BLOG_POST_BY_ID_QUERY = `
   }
 `;
 
-
 export const CATEGORIES_QUERY = `
   *[_type == "category"] | order(title asc) {
     _id,
@@ -243,9 +272,9 @@ export const CATEGORIES_QUERY = `
     slug,
     description,
   }
-`
+`;
 
-export const TAGS_QUERY = `array::unique(*[_type == "blogPost"].tags[])`
+export const TAGS_QUERY = `array::unique(*[_type == "blogPost"].tags[])`;
 
 export const AUTHORS_QUERY = `
   *[_type == "author"] | order(name asc) {
@@ -255,21 +284,48 @@ export const AUTHORS_QUERY = `
     image { asset-> },
     bio
   }
-`
+`;
 
 // ─────────────────────────────────────────────────────────────
 // MUTATIONS — dashboard admin actions only
 // All use sanityClient (write token) — never call from public pages
 // ─────────────────────────────────────────────────────────────
 
-export async function createBlogPost(data: Partial<import('@/types').BlogPost>) {
+export async function createBlogPost(data: CreateBlogPostInput) {
   return sanityClient.create({
-    _type: 'blogPost',
-    ...data,
-    status: data.status ?? 'draft',
-  })
-}
+    _type: "blogPost",
 
+    title: data.title,
+
+    slug: {
+      _type: "slug",
+      current: data.slug,
+    },
+
+    author: {
+      _type: "reference",
+      _ref: data.authorId,
+    },
+
+    excerpt: data.excerpt ?? "",
+    content: data.content ?? [],
+    tags: data.tags ?? [],
+
+    publishedAt: data.publishedAt ?? undefined,
+
+    categories:
+      data.categoryIds?.map((id) => ({
+        _type: "reference",
+        _ref: id,
+      })) ?? [],
+
+    metaTitle: data.metaTitle ?? "",
+    metaDescription: data.metaDescription ?? "",
+
+    mainImage: data.mainImage,
+    ogImage: data.ogImage,
+  });
+}
 
 /** Publish: set publishedAt to now */
 export async function publishBlogPost(id: string) {

@@ -1,8 +1,10 @@
+import { PortableTextBlock } from "@portabletext/react";
+
 export interface Author {
   id: string;
   name: string;
   role: string;
-  bio: string;
+  bio: PortableTextBlock[];
   avatar: string;
   social: {
     twitter?: string;
@@ -64,7 +66,7 @@ export interface BlogFilters {
   search?: string;
   category?: string;
   tag?: string;
-  sortBy?: 'latest' | 'oldest' | 'popular' | 'alphabetical';
+  sortBy?: "latest" | "oldest" | "popular" | "alphabetical";
 }
 
 export interface Heading {

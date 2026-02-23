@@ -1,3 +1,5 @@
+import { PortableTextBlock } from "@portabletext/react";
+
 // ✅ Shared
 export interface SanityImage {
   _type: "image";
@@ -80,7 +82,7 @@ export interface BlogPost {
     };
     alt?: string;
   };
-  content?: any; // You can replace `any` with PortableText type if needed
+  content?: PortableTextBlock[]; // You can replace `any` with PortableText type if needed
   author: {
     name: string;
     slug: { current: string };
@@ -91,7 +93,7 @@ export interface BlogPost {
       };
       alt?: string;
     };
-    bio?: any; // Replace with a PortableText type if needed
+    bio?: PortableTextBlock[]; // Replace with a PortableText type if needed
   };
 }
 

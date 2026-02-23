@@ -1,10 +1,10 @@
-
+import { PortableTextBlock } from "@portabletext/react";
 
 export interface Author {
   id: string;
   name: string;
   role: string;
-  bio: string;
+  bio: PortableTextBlock[];
   avatar: string;
   social: {
     twitter?: string;
@@ -34,7 +34,7 @@ export interface BlogPost {
   updatedAt?: string;
   readingTime: number;
   viewCount: number;
-  status: 'draft' | 'published' | 'archived';
+  status: "draft" | "published" | "archived";
   featured: boolean;
   category: {
     name: string;
@@ -60,7 +60,7 @@ export interface BlogPost {
 
 export interface BlogFilters {
   category?: string;
-  sort?: 'newest' | 'oldest' | 'az';
+  sort?: "newest" | "oldest" | "az";
   page?: number;
   search?: string;
 }
