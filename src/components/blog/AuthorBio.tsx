@@ -1,8 +1,10 @@
+"use client";
 
-import Image from 'next/image';
-import Link from 'next/link';
-import { Twitter, Linkedin, Github, User } from 'lucide-react';
-import { Author } from '@/src/lib/blog/types';
+import { PortableText } from "@portabletext/react";
+import Image from "next/image";
+import Link from "next/link";
+import { Twitter, Linkedin, Github, User } from "lucide-react";
+import { Author } from "@/src/lib/blog/types";
 
 interface AuthorBioProps {
   author: Author;
@@ -36,18 +38,22 @@ export function AuthorBio({ author }: AuthorBioProps) {
             <h3 className="text-xl md:text-2xl font-bold text-foreground mb-1">
               {author.name}
             </h3>
+
             <p className="text-sm md:text-base text-muted-foreground mb-3">
               {author.role}
             </p>
-            
+
+            {/* ✅ FIXED: Proper Portable Text Rendering */}
             {author.bio && (
-              <p className="text-sm md:text-base text-foreground/80 leading-relaxed mb-4">
-                {author.bio}
-              </p>
+              <div className="prose prose-sm md:prose-base max-w-none text-foreground/80 mb-4">
+                <PortableText value={author.bio} />
+              </div>
             )}
 
             {/* Social Links */}
-            {(author.social?.twitter || author.social?.linkedin || author.social?.github) && (
+            {(author.social?.twitter ||
+              author.social?.linkedin ||
+              author.social?.github) && (
               <div className="flex items-center gap-3">
                 {author.social.twitter && (
                   <Link
@@ -60,6 +66,7 @@ export function AuthorBio({ author }: AuthorBioProps) {
                     <Twitter className="h-4 w-4" />
                   </Link>
                 )}
+
                 {author.social.linkedin && (
                   <Link
                     href={author.social.linkedin}
@@ -71,6 +78,7 @@ export function AuthorBio({ author }: AuthorBioProps) {
                     <Linkedin className="h-4 w-4" />
                   </Link>
                 )}
+
                 {author.social.github && (
                   <Link
                     href={author.social.github}

@@ -1,19 +1,20 @@
-
-import { Metadata } from 'next';
-import { notFound } from 'next/navigation';
-import { Suspense } from 'react';
-import { PortableText } from '@portabletext/react';
-import { getPostBySlug, getAllPostSlugs, getRelatedPosts } from '@/src/sanity/lib/queries';
-import { portableTextComponents } from '@/src/sanity/lib/portableText';
-import { BlogPost } from '@/src/lib/blog/types';
-import { calculateReadingTime, getOgImageUrl } from '@/src/lib/blog/utils';
-import { BlogPostHero } from '@/src/components/blog/BlogPostHero';
-import { BlogPostContent } from '@/src/components/blog/BlogPostContent';
-import { AuthorBio } from '@/src/components/blog/AuthorBio';
-import { RelatedPosts } from '@/src/components/blog/RelatedPosts';
-import { ShareButtons } from '@/src/components/blog/ShareButtons';
-import { TableOfContents } from '@/src/components/blog/TableOfContents';
-import { BackToBlogButton } from '@/src/components/blog/BackToBlogButton';
+import { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { Suspense } from "react";
+import {
+  getPostBySlug,
+  getAllPostSlugs,
+  getRelatedPosts,
+} from "@/src/sanity/lib/queries";
+import { BlogPost } from "@/src/lib/blog/types";
+import { calculateReadingTime, getOgImageUrl } from "@/src/lib/blog/utils";
+import { BlogPostHero } from "@/src/components/blog/BlogPostHero";
+import { BlogPostContent } from "@/src/components/blog/BlogPostContent";
+import { AuthorBio } from "@/src/components/blog/AuthorBio";
+import RelatedPosts from "@/src/components/blog/RelatedPosts";
+import { ShareButtons } from "@/src/components/blog/ShareButtons";
+import { TableOfContents } from "@/src/components/blog/TableOfContents";
+import { BackToBlogButton } from "@/src/components/blog/BackToBlogButton";
 
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>;
@@ -26,14 +27,16 @@ export async function generateStaticParams() {
 }
 
 // Generate metadata for SEO
-export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: BlogPostPageProps): Promise<Metadata> {
   const { slug } = await params;
   const post = await getPostBySlug(slug);
 
   if (!post) {
-    return { 
-      title: 'Post Not Found | Silverline Technologies',
-      description: 'The requested blog post could not be found.'
+    return {
+      title: "Post Not Found | Silverline Technologies",
+      description: "The requested blog post could not be found.",
     };
   }
 
@@ -46,7 +49,7 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
     openGraph: {
       title: post.metaTitle || post.title,
       description: post.metaDescription || post.excerpt,
-      type: 'article',
+      type: "article",
       publishedTime: post.publishedAt,
       modifiedTime: post.updatedAt || post.publishedAt,
       authors: [post.author.name],
@@ -54,7 +57,7 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
       tags: post.tags || [],
     },
     twitter: {
-      card: 'summary_large_image',
+      card: "summary_large_image",
       title: post.metaTitle || post.title,
       description: post.metaDescription || post.excerpt,
       images: ogImage ? [ogImage] : [],
@@ -78,32 +81,32 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   // Format post data
   const formattedPost: BlogPost = {
     _id: post._id,
-    status: post.status || 'published',
+    status: post.status || "published",
     id: post._id,
     title: post.title,
     slug: { current: post.slug },
     excerpt: post.excerpt,
-    coverImage: post.mainImage?.asset?.url || '',
+    coverImage: post.mainImage?.asset?.url || "",
     publishedAt: post.publishedAt,
     updatedAt: post.updatedAt,
     readingTime,
     viewCount: post.viewCount || 0,
     category: {
-      name: post.category?.name || 'Uncategorized',
-      slug: post.category?.slug || 'uncategorized',
+      name: post.category?.name || "Uncategorized",
+      slug: post.category?.slug || "uncategorized",
     },
     author: {
       id: post.author._id,
       name: post.author.name,
-      role: post.author.role || 'Content Creator',
-      bio: post.author.bio || '',
-      avatar: post.author.image?.asset?.url || '',
+      role: post.author.role || "Content Creator",
+      bio: post.author.bio || [],
+      avatar: post.author.image?.asset?.url || "",
       social: post.author.social || {},
     },
     tags: post.tags || [],
     featured: post.featured || false,
-    metaTitle: post.metaTitle || '',
-    metaDescription: post.metaDescription || '',
+    metaTitle: post.metaTitle || "",
+    metaDescription: post.metaDescription || "",
     content: post.content,
     mainImage: post.mainImage,
     ogImage: post.ogImage,
@@ -115,31 +118,31 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
   const formattedRelatedPosts: BlogPost[] = relatedPostsRaw.map((p: any) => ({
     _id: p._id,
-    status: p.status || 'published',
+    status: p.status || "published",
     id: p._id,
     title: p.title,
     slug: { current: p.slug },
     excerpt: p.excerpt,
-    coverImage: p.mainImage?.asset?.url || '',
+    coverImage: p.mainImage?.asset?.url || "",
     publishedAt: p.publishedAt,
     readingTime: 5,
     viewCount: 0,
     category: {
-      name: p.categories?.[0]?.name || 'Uncategorized',
-      slug: p.categories?.[0]?.slug || 'uncategorized',
+      name: p.categories?.[0]?.name || "Uncategorized",
+      slug: p.categories?.[0]?.slug || "uncategorized",
     },
     author: {
       id: p.author._id,
       name: p.author.name,
-      role: 'Content Creator',
-      bio: '',
-      avatar: p.author.image?.asset?.url || '',
+      role: "Content Creator",
+      bio: "",
+      avatar: p.author.image?.asset?.url || "",
       social: {},
     },
     tags: [],
     featured: false,
-    metaTitle: '',
-    metaDescription: '',
+    metaTitle: "",
+    metaDescription: "",
   }));
 
   // Build post URL for sharing
@@ -147,29 +150,29 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
   // Generate structured data for rich snippets
   const structuredData = {
-    '@context': 'https://schema.org',
-    '@type': 'BlogPosting',
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
     headline: post.title,
     description: post.excerpt,
     image: formattedPost.coverImage,
     datePublished: post.publishedAt,
     dateModified: post.updatedAt || post.publishedAt,
     author: {
-      '@type': 'Person',
+      "@type": "Person",
       name: post.author.name,
       url: post.author.social?.twitter,
     },
     publisher: {
-      '@type': 'Organization',
-      name: 'Silverline Technologies',
+      "@type": "Organization",
+      name: "Silverline Technologies",
       logo: {
-        '@type': 'ImageObject',
+        "@type": "ImageObject",
         url: `${process.env.NEXT_PUBLIC_SITE_URL}/logo.png`,
       },
     },
     mainEntityOfPage: {
-      '@type': 'WebPage',
-      '@id': postUrl,
+      "@type": "WebPage",
+      "@id": postUrl,
     },
   };
 
@@ -194,7 +197,11 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
             {/* Table of Contents - Hidden on mobile, sticky on desktop */}
             <aside className="hidden lg:block lg:col-span-3">
               <div className="sticky top-24">
-                <Suspense fallback={<div className="h-64 animate-pulse bg-muted rounded-lg" />}>
+                <Suspense
+                  fallback={
+                    <div className="h-64 animate-pulse bg-muted rounded-lg" />
+                  }
+                >
                   <TableOfContents content={post.content} />
                 </Suspense>
               </div>
