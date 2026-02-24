@@ -260,6 +260,216 @@
 
 @layer components {
 
+    /* ─── Portable Text Editor ──────────────────────── */
+
+    .ProseMirror {
+        outline: none;
+        padding: 1.25rem 1.5rem;
+        color: var(--text);
+        font-size: 15px;
+        line-height: 1.75;
+        min-height: inherit;
+    }
+
+    .ProseMirror>*+* {
+        margin-top: 0.75em;
+    }
+
+    .ProseMirror h1 {
+        font-family: 'Playfair Display', serif;
+        font-size: 2em;
+        font-weight: 700;
+        color: var(--text);
+        margin-top: 1.5em;
+        margin-bottom: 0.4em;
+        line-height: 1.2;
+    }
+
+    .ProseMirror h2 {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.5em;
+        font-weight: 600;
+        color: var(--text);
+        margin-top: 1.25em;
+        margin-bottom: 0.35em;
+        line-height: 1.3;
+    }
+
+    .ProseMirror h3 {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.25em;
+        font-weight: 600;
+        color: var(--text);
+        margin-top: 1em;
+        margin-bottom: 0.3em;
+    }
+
+    .ProseMirror h4 {
+        font-size: 1.1em;
+        font-weight: 600;
+        color: var(--text-muted);
+        margin-top: 0.9em;
+        margin-bottom: 0.25em;
+    }
+
+    .ProseMirror p {
+        color: var(--text-muted);
+    }
+
+    .ProseMirror ul,
+    .ProseMirror ol {
+        padding-left: 1.75em;
+        margin: 0.5em 0;
+    }
+
+    .ProseMirror ul {
+        list-style-type: disc;
+    }
+
+    .ProseMirror ol {
+        list-style-type: decimal;
+    }
+
+    .ProseMirror li {
+        color: var(--text-muted);
+        margin: 0.2em 0;
+    }
+
+    .ProseMirror li::marker {
+        color: var(--accent);
+    }
+
+    .ProseMirror blockquote {
+        border-left: 3px solid var(--accent);
+        padding: 0.5em 0 0.5em 1.25em;
+        margin: 0.75em 0;
+        font-style: italic;
+        color: var(--text-muted);
+        background: oklch(0.88 0.17 85 / 0.04);
+        border-radius: 0 0.5rem 0.5rem 0;
+    }
+
+    .ProseMirror pre.editor-code-block {
+        background: oklch(0 0 0 / 0.25);
+        border: 1px solid var(--border);
+        border-radius: 0.625rem;
+        padding: 1em 1.25em;
+        font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+        font-size: 0.875em;
+        overflow-x: auto;
+        margin: 0.75em 0;
+    }
+
+    .ProseMirror pre.editor-code-block code {
+        background: none;
+        padding: 0;
+        border-radius: 0;
+        color: oklch(0.88 0.17 85);
+    }
+
+    .ProseMirror code:not(pre code) {
+        background: oklch(0.49 0.18 302 / 0.15);
+        color: oklch(0.75 0.15 315);
+        padding: 0.15em 0.4em;
+        border-radius: 0.3em;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.875em;
+        border: 1px solid oklch(0.49 0.18 302 / 0.2);
+    }
+
+    .editor-link {
+        color: var(--accent);
+        text-decoration: underline;
+        text-underline-offset: 2px;
+        cursor: pointer;
+    }
+
+    .editor-link:hover {
+        opacity: 0.8;
+    }
+
+    .ProseMirror p.is-editor-empty:first-child::before {
+        color: var(--text-faint);
+        content: attr(data-placeholder);
+        float: left;
+        pointer-events: none;
+        height: 0;
+    }
+
+    /* Sanity image node */
+    .sanity-image-wrapper {
+        position: relative;
+        display: inline-block;
+        width: 100%;
+        margin: 1em 0;
+        border-radius: 0.75rem;
+        overflow: hidden;
+        border: 2px solid transparent;
+        transition: border-color 0.15s;
+    }
+
+    .sanity-image-wrapper:hover {
+        border-color: var(--accent);
+    }
+
+    .sanity-image-img {
+        display: block;
+        max-width: 100%;
+        height: auto;
+        border-radius: 0.625rem;
+    }
+
+    .sanity-image-alt-wrapper {
+        padding: 0.5rem 0.75rem;
+        background: oklch(0 0 0 / 0.3);
+        border-top: 1px solid var(--border);
+    }
+
+    .sanity-image-alt-input {
+        width: 100%;
+        background: transparent;
+        border: none;
+        outline: none;
+        font-size: 0.75rem;
+        color: var(--text-faint);
+        font-style: italic;
+    }
+
+    .sanity-image-alt-input::placeholder {
+        color: var(--text-faint);
+        opacity: 0.6;
+    }
+
+    .sanity-image-delete {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        width: 1.75rem;
+        height: 1.75rem;
+        border-radius: 0.5rem;
+        background: oklch(0.63 0.26 29 / 0.85);
+        color: white;
+        font-size: 1.1rem;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.15s;
+        cursor: pointer;
+        border: none;
+    }
+
+    .sanity-image-wrapper:hover .sanity-image-delete {
+        opacity: 1;
+    }
+
+    /* Selected node highlight */
+    .ProseMirror .ProseMirror-selectednode {
+        outline: 2px solid var(--accent);
+        border-radius: 0.5rem;
+    }
+
     /* ─── Sidebar ─────────────────────────────────────────── */
     .sidebar {
         @apply fixed left-0 top-0 h-full z-40 flex flex-col;
@@ -658,5 +868,3 @@
         transform: scale(1);
     }
 }
-
-

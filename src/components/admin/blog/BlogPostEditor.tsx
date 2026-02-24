@@ -95,8 +95,8 @@ function CharCounter({ current, ideal, max }: CharCounterProps) {
           color: overMax
             ? "oklch(0.63 0.26 29)"
             : overIdeal
-            ? "oklch(0.85 0.15 85)"
-            : "var(--text-faint)",
+              ? "oklch(0.85 0.15 85)"
+              : "var(--text-faint)",
         }}
       >
         {current}/{max}
@@ -148,7 +148,7 @@ export default function BlogPostEditor({
       "categoryIds",
       form.categoryIds.includes(id)
         ? form.categoryIds.filter((c) => c !== id)
-        : [...form.categoryIds, id]
+        : [...form.categoryIds, id],
     );
   }
 
@@ -166,7 +166,7 @@ export default function BlogPostEditor({
   function removeTag(t: string) {
     set(
       "tags",
-      form.tags.filter((x) => x !== t)
+      form.tags.filter((x) => x !== t),
     );
   }
 
@@ -233,8 +233,8 @@ export default function BlogPostEditor({
         {/* Action buttons */}
         <div className="flex items-center gap-2 flex-wrap">
           {mode === "edit" && post && (
-            
-              <Link href={`${process.env.NEXT_PUBLIC_SANITY_STUDIO_URL ?? ""}/desk/blogPost;${post._id}`}
+            <Link
+              href={`${process.env.NEXT_PUBLIC_SANITY_STUDIO_URL ?? ""}/desk/blogPost;${post._id}`}
               target="_blank"
               rel="noopener noreferrer"
               className="btn-secondary text-sm"
@@ -272,8 +272,8 @@ export default function BlogPostEditor({
             {busy && saveType === "publish"
               ? "Publishing..."
               : isPublished
-              ? "Update & Keep Published"
-              : "Publish"}
+                ? "Update & Keep Published"
+                : "Publish"}
           </button>
         </div>
       </div>
@@ -282,13 +282,13 @@ export default function BlogPostEditor({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* ── Main column (2/3) ── */}
         <div className="lg:col-span-2 space-y-5">
-
           {/* Core fields card */}
           <SectionCard>
             {/* Title */}
             <div>
               <label className="label">
-                Post Title <span style={{ color: "oklch(0.63 0.26 29)" }}>*</span>
+                Post Title{" "}
+                <span style={{ color: "oklch(0.63 0.26 29)" }}>*</span>
               </label>
               <input
                 className="input text-base"
@@ -304,9 +304,13 @@ export default function BlogPostEditor({
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="label mb-0">
-                  URL Slug <span style={{ color: "oklch(0.63 0.26 29)" }}>*</span>
+                  URL Slug{" "}
+                  <span style={{ color: "oklch(0.63 0.26 29)" }}>*</span>
                 </label>
-                <span className="text-xs" style={{ color: "var(--text-faint)" }}>
+                <span
+                  className="text-xs"
+                  style={{ color: "var(--text-faint)" }}
+                >
                   yoursite.com/blog/
                   <span
                     className="font-semibold font-mono"
@@ -333,7 +337,7 @@ export default function BlogPostEditor({
                         e.target.value
                           .toLowerCase()
                           .replace(/[^a-z0-9-]/g, "-")
-                          .replace(/-+/g, "-")
+                          .replace(/-+/g, "-"),
                       );
                     }}
                   />
@@ -409,7 +413,7 @@ export default function BlogPostEditor({
                 className="text-xs mt-0.5 leading-relaxed"
                 style={{ color: "var(--text-faint)" }}
               >
-                Post body uses Sanity's Portable Text editor.{" "}
+                Post body uses Sanity`&lsquo;`s Portable Text editor.{" "}
                 {mode === "create"
                   ? 'Save the draft first, then click "Open in Studio" to write the full content.'
                   : 'Use "Open in Studio" above to edit the post body.'}
@@ -465,7 +469,6 @@ export default function BlogPostEditor({
 
         {/* ── Sidebar column (1/3) ── */}
         <div className="space-y-4">
-
           {/* Author */}
           <SectionCard title="Author">
             {loadingMeta ? (
@@ -635,10 +638,7 @@ export default function BlogPostEditor({
 
           {/* Post info (edit mode only) */}
           {mode === "edit" && post && (
-            <div
-              className="card p-4 space-y-3"
-              style={{ fontSize: "12px" }}
-            >
+            <div className="card p-4 space-y-3" style={{ fontSize: "12px" }}>
               <h3
                 className="text-xs font-semibold uppercase tracking-widest"
                 style={{ color: "var(--text-faint)" }}
