@@ -8,19 +8,18 @@ import {
   CATEGORIES_QUERY,
   AUTHORS_QUERY,
 } from "@/src/sanity/lib/sanity";
-import {
-  type SanityCategory,
-  type SanityAuthor,
-  type PostFormData,
-  slugify,
-} from "@/types/types";
-import BlogPostEditor from "@/src/components/admin/blog/BlogPostEditor";
+import type { SanityCategory, SanityAuthor } from "@/types/types";
+import { createBlogPost } from "@/src/app/actions/blog-editor";
+import BlogEditorForm, {
+  type BlogFormValues,
+} from "@/src/components/admin/blog/BlogEditorForm";
+import type { PortableTextBlock } from "@/src/lib/portable-text";
 
 export default function NewBlogPostPage() {
   const router = useRouter();
   const [categories, setCategories] = useState<SanityCategory[]>([]);
   const [authors, setAuthors] = useState<SanityAuthor[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingMeta, setLoadingMeta] = useState(true);
 
   useEffect(() => {
     async function load() {
@@ -32,47 +31,51 @@ export default function NewBlogPostPage() {
         setCategories(cats);
         setAuthors(auths);
       } catch {
-        toast.error("Failed to load categories/authors");
+        toast.error("Failed to load categories and authors");
       } finally {
-        setLoading(false);
+        setLoadingMeta(false);
       }
     }
     load();
   }, []);
 
-  async function handleSave(data: PostFormData, publish: boolean) {
-    const slug = data.slug || slugify(data.title);
+  async function handleSave(
+    values: BlogFormValues,
+    content: PortableTextBlock[],
+    publish: boolean
+  ) {
+    const result = await createBlogPost(
+      {
+        title: values.title,
+        slug: values.slug,
+        excerpt: values.excerpt ?? "",
+        content,
+        authorId: values.authorId ?? "",
+        categoryIds: values.categoryIds ?? [],
+        tags: values.tags ?? [],
+        metaTitle: values.metaTitle ?? "",
+        metaDescription: values.metaDescription ?? "",
+      },
+      publish
+    );
 
-    const doc: Record<string, unknown> = {
-      _type: "blogPost",
-      title: data.title,
-      slug: { _type: "slug", current: slug },
-      excerpt: data.excerpt || undefined,
-      tags: data.tags.length > 0 ? data.tags : undefined,
-      metaTitle: data.metaTitle || undefined,
-      metaDescription: data.metaDescription || undefined,
-      author: data.authorId
-        ? { _type: "reference", _ref: data.authorId }
-        : undefined,
-      categories:
-        data.categoryIds.length > 0
-          ? data.categoryIds.map((id) => ({ _type: "reference", _ref: id }))
-          : undefined,
-      publishedAt: publish ? new Date().toISOString() : undefined,
-    };
+    if (!result.success || !result.data) {
+      toast.error(result.error ?? "Failed to save post");
+      throw new Error(result.error ?? "Failed to save post");
+    }
 
-    const created = await sanityClient.create(doc);
     toast.success(publish ? "Post published!" : "Draft saved!");
-    router.push(`/admin/dashboard/blog/${created._id}`);
+    router.push(`/admin/dashboard/blog/${result.data._id}/edit`);
   }
 
   return (
-    <BlogPostEditor
+    <BlogEditorForm
       mode="create"
       categories={categories}
       authors={authors}
-      loadingMeta={loading}
+      loadingMeta={loadingMeta}
       onSave={handleSave}
+      sanityStudioUrl={process.env.NEXT_PUBLIC_SANITY_STUDIO_URL}
     />
   );
 }
