@@ -1,6 +1,5 @@
 "use client";
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Star, ChevronLeft, ChevronRight, Quote } from "lucide-react";
 
 const testimonials = [
@@ -70,36 +69,15 @@ const Testimonials = () => {
     setCurrentIndex((prev) => (prev + 1) % testimonials.length);
   };
 
-  const variants = {
-    enter: (direction: number) => ({
-      x: direction > 0 ? 300 : -300,
-      opacity: 0,
-    }),
-    center: {
-      x: 0,
-      opacity: 1,
-    },
-    exit: (direction: number) => ({
-      x: direction < 0 ? 300 : -300,
-      opacity: 0,
-    }),
-  };
-
   return (
     <section className="py-24 bg-background relative overflow-hidden">
       <div className="container mx-auto px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-16"
-        >
+        <div className="text-center mb-16">
           <h2 className="font-heading font-bold text-3xl md:text-4xl text-gradient-gold uppercase tracking-widest mb-4">
             What Our Clients Say
           </h2>
           <div className="w-24 h-1 bg-accent mx-auto" />
-        </motion.div>
+        </div>
 
         <div className="relative max-w-4xl mx-auto">
           {/* Navigation Buttons */}
@@ -119,52 +97,44 @@ const Testimonials = () => {
           </button>
 
           {/* Testimonial Card */}
-          <div className="overflow-hidden">
-            <AnimatePresence mode="wait" custom={direction}>
-              <motion.div
-                key={currentIndex}
-                custom={direction}
-                variants={variants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{ duration: 0.4, ease: "easeInOut" }}
-                className="glass-card rounded-2xl p-8 md:p-12 text-center"
-              >
-                <Quote className="w-12 h-12 text-accent/30 mx-auto mb-6" />
+          <div className="relative">
+            <div
+              key={currentIndex}
+              className="glass-card rounded-2xl p-8 md:p-12 text-center transition-all duration-500 ease-in-out"
+            >
+              <Quote className="w-12 h-12 text-accent/30 mx-auto mb-6" />
 
-                <p className="text-foreground text-lg md:text-xl leading-relaxed mb-8 italic">
-                  "{testimonials[currentIndex].content}"
-                </p>
+              <p className="text-foreground text-lg md:text-xl leading-relaxed mb-8 italic">
+                "{testimonials[currentIndex].content}"
+              </p>
 
-                {/* Rating */}
-                <div className="flex justify-center gap-1 mb-6">
-                  {Array.from({
-                    length: testimonials[currentIndex].rating,
-                  }).map((_, i) => (
-                    <Star key={i} className="w-5 h-5 text-accent fill-accent" />
-                  ))}
+              {/* Rating */}
+              <div className="flex justify-center gap-1 mb-6">
+                {Array.from({
+                  length: testimonials[currentIndex].rating,
+                }).map((_, i) => (
+                  <Star key={i} className="w-5 h-5 text-accent fill-accent" />
+                ))}
+              </div>
+
+              {/* Author */}
+              <div className="flex items-center justify-center gap-4">
+                <div className="w-14 h-14 rounded-full bg-accent/20 flex items-center justify-center">
+                  <span className="font-heading font-bold text-accent text-lg">
+                    {testimonials[currentIndex].image}
+                  </span>
                 </div>
-
-                {/* Author */}
-                <div className="flex items-center justify-center gap-4">
-                  <div className="w-14 h-14 rounded-full bg-accent/20 flex items-center justify-center">
-                    <span className="font-heading font-bold text-accent text-lg">
-                      {testimonials[currentIndex].image}
-                    </span>
-                  </div>
-                  <div className="text-left">
-                    <h4 className="font-heading font-bold text-foreground">
-                      {testimonials[currentIndex].name}
-                    </h4>
-                    <p className="text-muted-foreground text-sm">
-                      {testimonials[currentIndex].role},{" "}
-                      {testimonials[currentIndex].company}
-                    </p>
-                  </div>
+                <div className="text-left">
+                  <h3 className="font-heading font-bold text-foreground">
+                    {testimonials[currentIndex].name}
+                  </h3>
+                  <p className="text-muted-foreground text-sm">
+                    {testimonials[currentIndex].role},{" "}
+                    {testimonials[currentIndex].company}
+                  </p>
                 </div>
-              </motion.div>
-            </AnimatePresence>
+              </div>
+            </div>
           </div>
 
           {/* Dots Indicator */}
