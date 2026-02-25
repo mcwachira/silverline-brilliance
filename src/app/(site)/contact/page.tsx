@@ -57,6 +57,7 @@ export default function ContactPage() {
 
       <section className="py-24 bg-background">
         <div className="container mx-auto px-4">
+          <h2 className="sr-only">Contact details and enquiry form</h2>
           <ContactInfo />
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">

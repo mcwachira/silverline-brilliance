@@ -1,9 +1,9 @@
 import { Metadata } from 'next';
 import FAQ from "../../components/FAQ";
-import CTA from "../../components/home/CTA.client";
-import Features from "../../components/home/Features.client";
+import CTA from "../../components/home/CTA";
+import Features from "../../components/home/Features";
 import Hero from "../../components/home/Hero.client";
-import Portfolio from "../../components/home/Portfolio.client";
+import Portfolio from "../../components/home/Portfolio";
 import Services from "../../components/home/Services";
 import Testimonials from "../../components/Testimonial";
 

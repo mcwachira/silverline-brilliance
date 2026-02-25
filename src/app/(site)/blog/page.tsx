@@ -13,12 +13,40 @@ import { BLOG_CONFIG } from '@/src/lib/blog/constants';
 import { BlogPost } from '@/src/lib/blog/types';
 
 export const metadata:Metadata = {
-    title: 'Blog | Silverline Technologies',
+  title: 'Blog | Silverline Technologies',
   description: 'Latest news, insights, and updates from Silverline Technologies. Explore our articles on technology, innovation, and industry trends.',
+  keywords: [
+    'Silverline Technologies blog',
+    'audiovisual insights',
+    'live streaming tips',
+    'event production insights',
+    'corporate events Kenya',
+    'AV technology',
+    'hybrid events',
+    'video production',
+  ],
   openGraph: {
     title: 'Blog | Silverline Technologies',
-    description: 'Latest news, insights, and updates from Silverline Technologies',
+    description: 'Latest news, insights, and updates from Silverline Technologies.',
     type: 'website',
+    url: '/blog',
+    images: [
+      {
+        url: '/og-blog.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Silverline Technologies Blog',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Blog | Silverline Technologies',
+    description: 'Latest news, insights, and updates from Silverline Technologies.',
+    images: ['/og-blog.jpg'],
+  },
+  alternates: {
+    canonical: '/blog',
   },
 }
 

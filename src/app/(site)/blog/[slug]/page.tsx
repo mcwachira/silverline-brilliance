@@ -41,15 +41,24 @@ export async function generateMetadata({
   }
 
   const ogImage = getOgImageUrl(post as unknown as BlogPost);
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://silverline-brilliance.com';
+  const canonicalUrl = `${baseUrl}/blog/${slug}`;
+  const keywords = [
+    ...(Array.isArray(post.tags) ? post.tags : []),
+    post.category?.name,
+    'Silverline Technologies',
+  ].filter(Boolean) as string[];
 
   return {
     title: post.metaTitle || `${post.title} | Silverline Technologies`,
     description: post.metaDescription || post.excerpt,
+    keywords,
     authors: [{ name: post.author.name }],
     openGraph: {
       title: post.metaTitle || post.title,
       description: post.metaDescription || post.excerpt,
       type: "article",
+      url: canonicalUrl,
       publishedTime: post.publishedAt,
       modifiedTime: post.updatedAt || post.publishedAt,
       authors: [post.author.name],
@@ -64,7 +73,7 @@ export async function generateMetadata({
       creator: post.author.social?.twitter,
     },
     alternates: {
-      canonical: `${process.env.NEXT_PUBLIC_SITE_URL}/blog/${slug}`,
+      canonical: canonicalUrl,
     },
   };
 }
@@ -146,7 +155,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   }));
 
   // Build post URL for sharing
-  const postUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/blog/${slug}`;
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://silverline-brilliance.com';
+  const postUrl = `${baseUrl}/blog/${slug}`;
 
   // Generate structured data for rich snippets
   const structuredData = {
@@ -154,7 +164,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     "@type": "BlogPosting",
     headline: post.title,
     description: post.excerpt,
-    image: formattedPost.coverImage,
+    image: getOgImageUrl(formattedPost) || formattedPost.coverImage,
     datePublished: post.publishedAt,
     dateModified: post.updatedAt || post.publishedAt,
     author: {
