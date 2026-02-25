@@ -14,9 +14,8 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  swcMinify: true,
   experimental: {
-    optimizePackageImports: ['framer-motion', 'lucide-react'],
+    optimizePackageImports: ["framer-motion", "lucide-react"],
   },
   async headers() {
     return [

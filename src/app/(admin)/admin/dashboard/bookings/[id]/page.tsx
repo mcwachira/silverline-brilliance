@@ -44,7 +44,7 @@ export default async function BookingDetailPage({ params }: Props) {
       <div className="page-header">
         <div className="flex items-start gap-4">
           <Link
-            href="//admin/dashboard/bookings"
+            href="/admin/dashboard/bookings"
             className="btn-ghost p-2 mt-0.5"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -80,13 +80,11 @@ export default async function BookingDetailPage({ params }: Props) {
               <InfoRow
                 icon={User}
                 label="Name"
-                value={b.client_name}
+                value={b.full_name}
                 highlight
               />
-              <InfoRow icon={Mail} label="Email" value={b.client_email} />
-              {b.client_phone && (
-                <InfoRow icon={Phone} label="Phone" value={b.client_phone} />
-              )}
+              <InfoRow icon={Mail} label="Email" value={b.email} />
+              {b.phone && <InfoRow icon={Phone} label="Phone" value={b.phone} />}
             </div>
           </section>
 
@@ -105,18 +103,28 @@ export default async function BookingDetailPage({ params }: Props) {
                 value={format(new Date(b.event_date), "EEEE, MMMM d, yyyy")}
                 highlight
               />
-              {b.event_time && (
+              {b.event_start_time && (
                 <InfoRow
                   icon={Calendar}
-                  label="Event Time"
-                  value={b.event_time}
+                  label="Event Start Time"
+                  value={b.event_start_time}
                 />
               )}
-              {b.event_location && (
+              {b.event_end_time && (
+                <InfoRow
+                  icon={Calendar}
+                  label="Event End Time"
+                  value={b.event_end_time}
+                />
+              )}
+              {b.venue_name && (
+                <InfoRow icon={MapPin} label="Venue" value={b.venue_name} />
+              )}
+              {b.venue_address && (
                 <InfoRow
                   icon={MapPin}
-                  label="Location"
-                  value={b.event_location}
+                  label="Venue Address"
+                  value={b.venue_address}
                 />
               )}
               {b.event_type && (
@@ -126,7 +134,7 @@ export default async function BookingDetailPage({ params }: Props) {
                   value={b.event_type}
                 />
               )}
-              {b.services?.length > 0 && (
+              {b.selected_services?.length > 0 && (
                 <div className="flex gap-3">
                   <div
                     className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center"
@@ -145,7 +153,7 @@ export default async function BookingDetailPage({ params }: Props) {
                       Services
                     </p>
                     <div className="flex flex-wrap gap-1.5">
-                      {b.services.map((service) => (
+                      {b.selected_services.map((service) => (
                         <span
                           key={service}
                           className="badge badge-confirmed"
@@ -162,7 +170,7 @@ export default async function BookingDetailPage({ params }: Props) {
           </section>
 
           {/* Notes */}
-          {(b.notes || b.admin_notes) && (
+          {(b.special_requirements || b.internal_notes) && (
             <section className="card p-5">
               <h2
                 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider mb-4"
@@ -170,7 +178,7 @@ export default async function BookingDetailPage({ params }: Props) {
               >
                 <FileText className="w-3.5 h-3.5" /> Notes
               </h2>
-              {b.notes && (
+              {b.special_requirements && (
                 <div className="mb-4">
                   <p
                     className="text-xs mb-1"
@@ -179,11 +187,11 @@ export default async function BookingDetailPage({ params }: Props) {
                     Client Notes
                   </p>
                   <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-                    {b.notes}
+                    {b.special_requirements}
                   </p>
                 </div>
               )}
-              {b.admin_notes && (
+              {b.internal_notes && (
                 <div>
                   <p
                     className="text-xs mb-1"
@@ -199,7 +207,7 @@ export default async function BookingDetailPage({ params }: Props) {
                       border: "1px solid rgba(255,215,0,0.1)",
                     }}
                   >
-                    {b.admin_notes}
+                    {b.internal_notes}
                   </p>
                 </div>
               )}
