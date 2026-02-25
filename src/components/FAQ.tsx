@@ -1,5 +1,3 @@
-"use client";
-import { motion } from "framer-motion";
 import {
   Accordion,
   AccordionContent,
@@ -51,34 +49,18 @@ const faqs = [
   },
 ];
 
-const FAQ = () => {
+export default function FAQ() {
   return (
     <section className="py-24 bg-background">
       <div className="container mx-auto px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-16"
-        >
-          <h2 className="font-heading font-bold text-3xl md:text-4xl text-gradient-gold uppercase tracking-widest mb-4">
+        <div className="text-center mb-16">
+          <h2 className="font-heading font-bold text-4xl md:text-5xl text-gradient-gold uppercase tracking-wider mb-4">
             Frequently Asked Questions
           </h2>
-          <div className="w-24 h-1 bg-accent mx-auto mb-6" />
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Find answers to common questions about our services, booking
-            process, and more.
-          </p>
-        </motion.div>
+          <div className="w-24 h-1 bg-accent mx-auto" />
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="max-w-3xl mx-auto"
-        >
+        <div className="max-w-3xl mx-auto">
           <Accordion type="single" collapsible className="space-y-4">
             {faqs.map((faq, index) => (
               <AccordionItem
@@ -95,10 +77,8 @@ const FAQ = () => {
               </AccordionItem>
             ))}
           </Accordion>
-        </motion.div>
+        </div>
       </div>
     </section>
   );
-};
-
-export default FAQ;
+}

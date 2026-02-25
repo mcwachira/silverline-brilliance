@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { TrendingUp, Tag, Folder, Calendar, User } from 'lucide-react';
+import { TrendingUp, Tag, Folder, Calendar } from 'lucide-react';
 import { BlogPost, CategoryCount } from '@/src/lib/blog/types';
 import { formatDate, getImageUrl } from '@/src/lib/blog/utils';
 import { BLOG_ROUTES } from '@/src/lib/blog/constants';
@@ -44,9 +44,9 @@ export function BlogSidebar({ recentPosts, categories, tags }: BlogSidebarProps)
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <h4 className="mb-1 sm:mb-2 text-sm sm:text-base font-semibold text-foreground line-clamp-2 group-hover:text-accent transition-colors">
+                  <p className="mb-1 sm:mb-2 text-sm sm:text-base font-semibold text-foreground line-clamp-2 group-hover:text-accent transition-colors">
                     {post.title}
-                  </h4>
+                  </p>
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <Calendar className="h-3 w-3" />
                     <time dateTime={post.publishedAt}>{formatDate(post.publishedAt)}</time>

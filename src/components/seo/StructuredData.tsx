@@ -1,5 +1,6 @@
 // TypeScript interfaces for structured data
 interface StructuredDataProps {
+  type?: string;
   data: Record<string, unknown>;
 }
 

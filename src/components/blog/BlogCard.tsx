@@ -15,11 +15,8 @@ interface BlogCardProps {
 }
 
 export function BlogCard({ post, variant = 'default', priority = false }: BlogCardProps) {
-
-  console.log(post);
   const imageUrl = getImageUrl(post);
   const postUrl = BLOG_ROUTES.POST(post.slug);
-  console.log(postUrl)
 
   if (variant === 'featured') {
     return (
@@ -61,9 +58,9 @@ export function BlogCard({ post, variant = 'default', priority = false }: BlogCa
               </div>
 
               {/* Title */}
-              <h2 className="mb-3 sm:mb-4 text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white line-clamp-2">
+              <h3 className="mb-3 sm:mb-4 text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white line-clamp-2">
                 {post.title}
-              </h2>
+              </h3>
 
               {/* Excerpt */}
               <p className="mb-4 sm:mb-6 line-clamp-2 text-sm sm:text-base lg:text-lg text-white/90">

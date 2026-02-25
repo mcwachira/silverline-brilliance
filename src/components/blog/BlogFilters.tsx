@@ -44,6 +44,7 @@ export function BlogFilters({
   return (
     <section className="border-b border-border bg-card/50 sticky top-0 z-40 backdrop-blur-sm">
       <div className="container mx-auto px-4 py-4 md:py-6">
+        <h2 className="sr-only">Filter and sort blog posts</h2>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           {/* Category Filter */}
           <div className="flex items-center gap-2" role="group" aria-label="Category filters">
