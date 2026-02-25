@@ -32,12 +32,8 @@ export default function CompanyOverview() {
 
           <div className="grid grid-cols-2 gap-4">
             {stats.map((stat, i) => (
-              <motion.div
+              <div
                 key={stat.label}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
                 className="glass-card rounded-xl p-4 text-center"
               >
                 <div className="font-black text-3xl text-accent">
@@ -46,24 +42,20 @@ export default function CompanyOverview() {
                 <div className="text-muted-foreground text-sm">
                   {stat.label}
                 </div>
-              </motion.div>
+              </div>
             ))}
           </div>
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, x: 30 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true }}
-          className="relative"
-        >
-          <div className="absolute -inset-4 border-2 border-accent rounded-xl rotate-3" />
+        <div className="relative aspect-[4/3] rounded-2xl overflow-hidden">
           <Image
             src={heroImage}
-            alt="Silverline Team"
-            className="rounded-xl relative z-10"
+            alt="Professional AV team at work"
+            fill
+            sizes="(min-width: 1024px) 50vw, 100vw"
+            className="object-cover"
           />
-        </motion.div>
+        </div>
       </div>
     </section>
   );
