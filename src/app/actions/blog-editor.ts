@@ -52,7 +52,10 @@ function buildDoc(
 
 // ─── Create ───────────────────────────────────────────────────────────────────
 
-export async function createBlogPost (input: BlogPostInput, publish: boolean): Promise<ActionResult> {
+export async function createBlogPost(
+  input: BlogPostInput,
+  publish: boolean
+): Promise<ActionResult<SavedPost>> {
 
     try {
         const supabase = await createServerSupabaseClient();

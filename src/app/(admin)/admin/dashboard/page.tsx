@@ -5,6 +5,7 @@ import { format, startOfMonth, endOfMonth, subMonths} from "date-fns";
 import StatCard from "@/src/components/admin/dashboard/StatCard";
 import RecentBookings from "@/src/components/admin/booking/RecentBookings";
 import BookingsByStatusChart from "@/src/components/admin/dashboard/BookingsByStatusChart";
+import type { Booking } from "@/types/types";
 import {
   CalendarDays,
   FileText,
@@ -17,6 +18,13 @@ import DashboardHeader from "@/src/components/admin/dashboard/DshboardHeader";
 import StatCardSkeleton from "@/src/components/admin/dashboard/StatCardSkeleton";
 
 export const metadata = { title: "Overview" };
+
+type BookingRow = Omit<Booking, "preferred_contact"> & { preferred_contact: string };
+
+function normalizePreferredContact(value: string): Booking["preferred_contact"] {
+  if (value === "email" || value === "phone" || value === "whatsapp") return value;
+  return "email";
+}
 
 async function getDashboardData() {
   const supabase = await createServerSupabaseClient();
@@ -82,7 +90,11 @@ async function getDashboardData() {
   const confirmedBookings = confirmedRes.count ?? 0;
   const thisMonthBookings = thisMonthRes.count ?? 0;
   const lastMonthBookings = lastMonthRes.count ?? 0;
-  const recentBookings = recentRes.data ?? [];
+  const recentBookingRows = (recentRes.data ?? []) as BookingRow[];
+  const recentBookings: Booking[] = recentBookingRows.map((row) => ({
+    ...row,
+    preferred_contact: normalizePreferredContact(row.preferred_contact),
+  }));
   const statusBreakdown = statusRes.data ?? [];
 
   // Status breakdown for chart

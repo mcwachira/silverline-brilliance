@@ -29,6 +29,13 @@ const STATUS_OPTIONS: { value: BookingStatus | 'all'; label: string }[] = [
 type SortField = 'event_date' | 'created_at' | 'full_name' | 'status'
 type SortDir   = 'asc' | 'desc'
 
+type BookingRow = Omit<Booking, "preferred_contact"> & { preferred_contact: string };
+
+function normalizePreferredContact(value: string): Booking["preferred_contact"] {
+  if (value === "email" || value === "phone" || value === "whatsapp") return value;
+  return "email";
+}
+
 export default function BookingsPage() {
   const supabase = createClientSupabaseClient()
   const [bookings, setBookings] = useState<Booking[]>([])
@@ -59,7 +66,13 @@ export default function BookingsPage() {
 
       const { data, count, error } = await q
       if (error) throw error
-      setBookings(data ?? [])
+      const rows = (data ?? []) as BookingRow[]
+      setBookings(
+        rows.map((row) => ({
+          ...row,
+          preferred_contact: normalizePreferredContact(row.preferred_contact),
+        })),
+      )
       setTotal(count ?? 0)
     } catch {
       toast.error('Failed to load bookings')
@@ -241,7 +254,7 @@ export default function BookingsPage() {
                       {/* Actions */}
                       <td>
                         <div className="flex items-center gap-1">
-                          <Link href={`//admin/dashboard/bookings/${b.id}`} className="btn-ghost p-1.5" title="View details">
+                          <Link href={`/admin/dashboard/bookings/${b.id}`} className="btn-ghost p-1.5" title="View details">
                             <Eye className="w-3.5 h-3.5" />
                           </Link>
                           {b.status === 'pending' && (

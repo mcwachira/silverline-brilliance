@@ -31,7 +31,7 @@ export default function CompanyOverview() {
           </p>
 
           <div className="grid grid-cols-2 gap-4">
-            {stats.map((stat, i) => (
+            {stats.map((stat) => (
               <div
                 key={stat.label}
                 className="glass-card rounded-xl p-4 text-center"
@@ -45,7 +45,7 @@ export default function CompanyOverview() {
               </div>
             ))}
           </div>
-        </div>
+        </motion.div>
 
         <div className="relative aspect-[4/3] rounded-2xl overflow-hidden">
           <Image

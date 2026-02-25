@@ -1,7 +1,7 @@
 "use client";
 
 import {BlogCard} from "./BlogCard";
-import { BlogPost } from "@/types/blog";
+import type { BlogPost } from "@/src/lib/blog/types";
 
 interface RelatedPostsProps {
   posts: BlogPost[];
