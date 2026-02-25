@@ -190,7 +190,7 @@ export async function submitBooking(
     full_name: data.fullName,
     email: data.email,
     phone: data.phone,
-    company: data.company || undefined,
+    company: data.company || null,
     event_name: data.eventName,
     event_type:
       data.eventType === "Other"
