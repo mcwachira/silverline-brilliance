@@ -94,7 +94,7 @@ export default function RescheduleModal({ booking, onClose, onSuccess }: Props) 
               <h2 className="text-base font-semibold" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--text)' }}>
                 Reschedule Booking
               </h2>
-              <p className="text-xs" style={{ color: 'var(--text-faint)' }}>{booking.client_name}</p>
+              <p className="text-xs" style={{ color: 'var(--text-faint)' }}>{booking.full_name}</p>
             </div>
           </div>
           <button onClick={onClose} className="btn-ghost p-1.5">
