@@ -118,7 +118,6 @@ export default function RecentBookings({ bookings }: Props) {
 
         const clientName =
           booking.full_name?.trim() ||
-          booking.client_name?.trim() ||
           "Unknown Client";
 
         const eventName = booking.event_name?.trim() || "Untitled Event";
