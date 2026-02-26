@@ -31,7 +31,7 @@ export function formatRelativeDate(dateString:string):string {
  * Get image URL from post with fallback
  */
 export function getImageUrl(post: BlogPost): string {
-  return post.mainImage?.asset?.url || post.coverImage || '/images/blog-placeholder.jpg';
+  return post.mainImage?.asset?.url || post.coverImage ;
 }
 
 /**

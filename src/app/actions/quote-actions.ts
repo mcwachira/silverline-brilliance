@@ -3,53 +3,57 @@
 
 import { createServerSupabaseClient } from "@/src/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import type { Quote, QuoteStatus, ActionResult } from "@/types/admin";
+import type { QuoteRequestStatus } from "@/types/types";
+import type { ActionResult } from "@/types/admin";
+import type { Database } from "@/src/lib/supabase/database.types";
+
+type QuoteRequest = Database['public']['Tables']['quote_requests']['Row'];
 
 // ── Fetch all quotes ─────────────────────────────────────────────
 
-export async function getQuotes(): Promise<ActionResult<Quote[]>> {
+export async function getQuotes(): Promise<ActionResult<QuoteRequest[]>> {
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Unauthorised" };
 
   const { data, error } = await supabase
-    .from("quotes")
+    .from("quote_requests")
     .select("*")
     .order("created_at", { ascending: false });
 
   if (error) return { success: false, error: error.message };
-  return { success: true, data: data as Quote[] };
+  return { success: true, data: data as QuoteRequest[] };
 }
 
 // ── Fetch single quote ───────────────────────────────────────────
 
-export async function getQuote(id: string): Promise<ActionResult<Quote>> {
+export async function getQuote(id: string): Promise<ActionResult<QuoteRequest>> {
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Unauthorised" };
 
   const { data, error } = await supabase
-    .from("quotes")
+    .from("quote_requests")
     .select("*")
     .eq("id", id)
     .single();
 
   if (error) return { success: false, error: error.message };
-  return { success: true, data: data as Quote };
+  return { success: true, data: data as QuoteRequest };
 }
 
 // ── Update quote status ──────────────────────────────────────────
 
 export async function updateQuoteStatus(
   id: string,
-  status: QuoteStatus
+  status: QuoteRequestStatus
 ): Promise<ActionResult> {
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Unauthorised" };
 
   const { error } = await supabase
-    .from("quotes")
+    .from("quote_requests")
     .update({ status, updated_at: new Date().toISOString() })
     .eq("id", id);
 
@@ -67,7 +71,7 @@ export async function deleteQuote(id: string): Promise<ActionResult> {
   if (!user) return { success: false, error: "Unauthorised" };
 
   const { error } = await supabase
-    .from("quotes")
+    .from("quote_requests")
     .delete()
     .eq("id", id);
 

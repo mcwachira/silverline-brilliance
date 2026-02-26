@@ -22,9 +22,9 @@ export default async function QuotesPage() {
   const quotes = result.success ? (result.data ?? []) : [];
 
   // Totals for header summary chips
-  const totalValue = quotes.reduce((s, q) => s + q.total, 0);
-  const pending    = quotes.filter(q => q.status === "sent").length;
-  const accepted   = quotes.filter(q => q.status === "accepted").length;
+  const pending    = quotes.filter(q => q.status === "new").length;
+  const contacted  = quotes.filter(q => q.status === "contacted").length;
+  const converted  = quotes.filter(q => q.status === "converted").length;
 
   return (
     <div className="p-6 space-y-6 max-w-[1400px] mx-auto">
@@ -32,7 +32,7 @@ export default async function QuotesPage() {
       {/* ── Page header ─────────────────── */}
       <PageHeader
         title="Quotes"
-        subtitle={`${quotes.length} total · $${totalValue.toLocaleString("en-US", { minimumFractionDigits: 2 })} total value`}
+        subtitle={`${quotes.length} total · ${pending} new · ${contacted} contacted · ${converted} converted`}
       >
         <Button asChild className="btn-primary gap-2">
           <Link href="/dashboard/quotes/generate">
@@ -47,9 +47,7 @@ export default async function QuotesPage() {
         {[
           { label: "Total Quotes",  value: quotes.length,  color: "text-[var(--text)]",        bg: "bg-white/4" },
           { label: "Awaiting Reply",value: pending,         color: "text-[var(--info)]",         bg: "bg-[var(--info)]/8" },
-          { label: "Accepted",      value: accepted,        color: "text-[var(--success)]",      bg: "bg-[var(--success)]/8" },
-          { label: "Total Value",   value: `$${totalValue.toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
-                                                            color: "text-[var(--accent)]",       bg: "bg-[var(--accent)]/8" },
+          { label: "Converted",    value: converted,        color: "text-[var(--success)]",      bg: "bg-[var(--success)]/8" },
         ].map(({ label, value, color, bg }) => (
           <div
             key={label}

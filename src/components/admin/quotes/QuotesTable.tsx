@@ -19,24 +19,19 @@ import { toast } from "sonner";
 import { StatusBadge } from "@/src/components/admin/shared/StatusBadge";
 import { EmptyState } from "@/src/components/admin/shared/EmptyState";
 import { deleteQuote } from "@/src/app/actions/quote-actions";
-import type { Quote, QuoteStatus } from "@/types/admin";
+import type { QuoteRequest, QuoteRequestStatus } from "@/src/app/actions/quote-actions";
 
 // ── Status filter tabs ────────────────────────────────────────────
 
-const STATUS_TABS: { label: string; value: QuoteStatus | "all" }[] = [
-  { label: "All",      value: "all" },
-  { label: "Draft",    value: "draft" },
-  { label: "Sent",     value: "sent" },
-  { label: "Accepted", value: "accepted" },
-  { label: "Rejected", value: "rejected" },
-  { label: "Expired",  value: "expired" },
+const STATUS_TABS: { label: string; value: QuoteRequestStatus | "all" }[] = [
+  { label: "All",       value: "all" },
+  { label: "New",       value: "new" },
+  { label: "Contacted", value: "contacted" },
+  { label: "Converted",  value: "converted" },
+  { label: "Closed",     value: "closed" },
 ];
 
 // ── Helpers ───────────────────────────────────────────────────────
-
-function fmt(n: number) {
-  return `$${n.toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
-}
 
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-GB", {
@@ -47,24 +42,24 @@ function fmtDate(iso: string) {
 // ── Component ─────────────────────────────────────────────────────
 
 interface QuotesTableProps {
-  quotes: Quote[];
+  quotes: QuoteRequest[];
 }
 
 export function QuotesTable({ quotes }: QuotesTableProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState("");
-  const [activeTab, setActiveTab] = useState<QuoteStatus | "all">("all");
+  const [activeTab, setActiveTab] = useState<QuoteRequestStatus | "all">("all");
 
   // Filter
   const filtered = quotes.filter((q) => {
     const matchesTab  = activeTab === "all" || q.status === activeTab;
     const matchesSearch =
       !search ||
-      q.client_name.toLowerCase().includes(search.toLowerCase()) ||
-      q.quote_number.toLowerCase().includes(search.toLowerCase()) ||
-      (q.client_email ?? "").toLowerCase().includes(search.toLowerCase()) ||
-      (q.client_company ?? "").toLowerCase().includes(search.toLowerCase());
+      q.name.toLowerCase().includes(search.toLowerCase()) ||
+      q.reference.toLowerCase().includes(search.toLowerCase()) ||
+      q.email.toLowerCase().includes(search.toLowerCase()) ||
+      (q.service ?? "").toLowerCase().includes(search.toLowerCase());
     return matchesTab && matchesSearch;
   });
 
@@ -147,7 +142,7 @@ export function QuotesTable({ quotes }: QuotesTableProps) {
         <Table>
           <TableHeader>
             <TableRow className="border-b border-[var(--border)] hover:bg-transparent">
-              {["Reference", "Client", "Date", "Valid Until", "Items", "Total", "Status", ""].map((h) => (
+              {["Reference", "Client", "Email", "Service", "Date", "Status", ""].map((h) => (
                 <TableHead
                   key={h}
                   className="px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-[var(--text-faint)]"
@@ -181,42 +176,36 @@ export function QuotesTable({ quotes }: QuotesTableProps) {
                   {/* Reference */}
                   <TableCell className="px-4 py-3.5">
                     <span className="font-mono text-xs font-semibold text-[var(--text)]">
-                      {quote.quote_number}
+                      {quote.reference}
                     </span>
                   </TableCell>
 
                   {/* Client */}
                   <TableCell className="px-4 py-3.5">
                     <p className="text-sm font-semibold text-[var(--text)] leading-tight">
-                      {quote.client_name}
+                      {quote.name}
                     </p>
-                    {quote.client_company && (
-                      <p className="text-xs text-[var(--text-faint)] mt-0.5">
-                        {quote.client_company}
-                      </p>
-                    )}
                   </TableCell>
 
-                  {/* Issue Date */}
-                  <TableCell className="px-4 py-3.5 text-sm text-[var(--text-muted)] whitespace-nowrap">
-                    {fmtDate(quote.issue_date)}
-                  </TableCell>
-
-                  {/* Valid Until */}
-                  <TableCell className="px-4 py-3.5 text-sm text-[var(--text-muted)] whitespace-nowrap">
-                    {quote.valid_until ? fmtDate(quote.valid_until) : "—"}
-                  </TableCell>
-
-                  {/* Items count */}
-                  <TableCell className="px-4 py-3.5 text-sm text-[var(--text-muted)]">
-                    {quote.line_items.length} item{quote.line_items.length !== 1 ? "s" : ""}
-                  </TableCell>
-
-                  {/* Total */}
+                  {/* Email */}
                   <TableCell className="px-4 py-3.5">
-                    <span className="text-sm font-bold text-[var(--accent)]">
-                      {fmt(quote.total)}
-                    </span>
+                    <p className="text-sm text-[var(--text)]">
+                      {quote.email}
+                    </p>
+                  </TableCell>
+
+                  {/* Service */}
+                  <TableCell className="px-4 py-3.5">
+                    <p className="text-sm text-[var(--text)]">
+                      {quote.service || "—"}
+                    </p>
+                  </TableCell>
+
+                  {/* Date */}
+                  <TableCell className="px-4 py-3.5">
+                    <p className="text-sm text-[var(--text)]">
+                      {fmtDate(quote.created_at)}
+                    </p>
                   </TableCell>
 
                   {/* Status */}
@@ -252,7 +241,7 @@ export function QuotesTable({ quotes }: QuotesTableProps) {
                         <DropdownMenuSeparator className="bg-[var(--border)]" />
                         <DropdownMenuItem
                           className="gap-2 text-sm text-[var(--destructive)] cursor-pointer"
-                          onClick={() => handleDelete(quote.id, quote.quote_number)}
+                          onClick={() => handleDelete(quote.id, quote.reference)}
                           disabled={isPending}
                         >
                           <Trash2 className="w-3.5 h-3.5" /> Delete
