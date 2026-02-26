@@ -22,29 +22,24 @@ export async function getDashboardStats(): Promise<ActionResult<DashboardStats>>
     bookingsConfirmed,
     quotesAll,
     quotesAccepted,
-    posts,
     messages,
   ] = await Promise.all([
     supabase.from("bookings").select("id", { count: "exact", head: true }),
     supabase.from("bookings").select("id", { count: "exact", head: true }).gte("created_at", monthStart),
     supabase.from("bookings").select("id", { count: "exact", head: true }).eq("status", "pending"),
     supabase.from("bookings").select("id", { count: "exact", head: true }).eq("status", "confirmed"),
-    supabase.from("quotes").select("id", { count: "exact", head: true }),
-    supabase.from("quotes").select("id", { count: "exact", head: true }).eq("status", "accepted"),
-    supabase.from("blog_posts").select("id", { count: "exact", head: true }).eq("status", "published"),
+    supabase.from("quote_requests").select("id", { count: "exact", head: true }),
+    supabase.from("quote_requests").select("id", { count: "exact", head: true }).eq("status", "accepted"),
     supabase.from("contact_messages").select("id", { count: "exact", head: true }).eq("status", "unread"),
   ]);
 
   // Accepted quotes value
   const { data: acceptedQuotes } = await supabase
-    .from("quotes")
+    .from("quote_requests")
     .select("total")
     .eq("status", "accepted");
 
-  const total_quote_value = (acceptedQuotes ?? []).reduce(
-    (sum: number, q: { total: number }) => sum + (q.total ?? 0),
-    0
-  );
+  const total_quote_value = 0; // No total field available in quote_requests table
 
   const stats: DashboardStats = {
     total_bookings:      bookingsAll.count        ?? 0,
@@ -54,7 +49,7 @@ export async function getDashboardStats(): Promise<ActionResult<DashboardStats>>
     total_quotes:        quotesAll.count          ?? 0,
     accepted_quotes:     quotesAccepted.count     ?? 0,
     total_quote_value,
-    published_posts:     posts.count              ?? 0,
+    published_posts:     0, // No blog_posts table available
     unread_messages:     messages.count           ?? 0,
   };
 
@@ -70,15 +65,15 @@ export async function getActivityFeed(): Promise<ActionResult<ActivityItem[]>> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Unauthorised" };
 
-  const [bookings, quotes, messages, posts] = await Promise.all([
+  const [bookings, quotes, messages] = await Promise.all([
     supabase
       .from("bookings")
-      .select("id, reference, client_name, event_name, status, created_at")
+      .select("id, booking_reference, full_name, event_name, status, created_at")
       .order("created_at", { ascending: false })
       .limit(6),
     supabase
-      .from("quotes")
-      .select("id, quote_number, client_name, status, created_at")
+      .from("quote_requests")
+      .select("id, reference, name, status, created_at")
       .order("created_at", { ascending: false })
       .limit(6),
     supabase
@@ -86,11 +81,6 @@ export async function getActivityFeed(): Promise<ActionResult<ActivityItem[]>> {
       .select("id, reference, full_name, subject, status, created_at")
       .order("created_at", { ascending: false })
       .limit(5),
-    supabase
-      .from("blog_posts")
-      .select("id, title, status, created_at")
-      .order("created_at", { ascending: false })
-      .limit(3),
   ]);
 
   const items: ActivityItem[] = [
@@ -98,15 +88,15 @@ export async function getActivityFeed(): Promise<ActionResult<ActivityItem[]>> {
       id:         `booking-${b.id}`,
       type:       "booking" as const,
       action:     b.status === "pending" ? "New booking request" : `Booking ${b.status}`,
-      subject:    `${b.client_name} — ${b.event_name}`,
+      subject:    `${b.booking_reference} — ${b.full_name}`,
       status:     b.status,
       created_at: b.created_at,
     })),
     ...(quotes.data ?? []).map((q) => ({
       id:         `quote-${q.id}`,
       type:       "quote" as const,
-      action:     q.status === "draft" ? "Quote created" : `Quote ${q.status}`,
-      subject:    `${q.quote_number} — ${q.client_name}`,
+      action:     q.status === "new" ? "Quote created" : `Quote ${q.status}`,
+      subject:    `${q.reference} — ${q.name}`,
       status:     q.status,
       created_at: q.created_at,
     })),
@@ -117,14 +107,6 @@ export async function getActivityFeed(): Promise<ActionResult<ActivityItem[]>> {
       subject:    `${m.full_name} — ${m.subject}`,
       status:     m.status,
       created_at: m.created_at,
-    })),
-    ...(posts.data ?? []).map((p) => ({
-      id:         `blog-${p.id}`,
-      type:       "blog" as const,
-      action:     p.status === "published" ? "Post published" : "Post created",
-      subject:    p.title,
-      status:     p.status,
-      created_at: p.created_at,
     })),
   ]
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
@@ -158,8 +140,8 @@ export async function getRecentQuotes() {
   if (!user) return { success: false, error: "Unauthorised" as string, data: undefined };
 
   const { data, error } = await supabase
-    .from("quotes")
-    .select("id, quote_number, client_name, client_company, total, status, created_at")
+    .from("quote_requests")
+    .select("id, reference, name, status, created_at")
     .order("created_at", { ascending: false })
     .limit(5);
 

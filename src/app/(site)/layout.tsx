@@ -11,12 +11,14 @@ const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
   display: "swap",
+  preload: true,
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
   display: "swap",
+  preload: false,
 });
 
 export const metadata: Metadata = {
@@ -105,11 +107,13 @@ export default function RootLayout({
       >
         <AppProviders>
           <div className="min-h-screen flex flex-col">
-            <Navbar />
+            <div className="h-16 lg:h-20" style={{ minHeight: '4rem' }}>
+              <Navbar />
+            </div>
             <main className="flex-grow">
               <Suspense fallback={
-                <div className="min-h-screen flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-accent"></div>
+                <div className="min-h-screen flex items-center justify-center bg-background" style={{ minHeight: '100vh' }}>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
                 </div>
               }>
                 {children}

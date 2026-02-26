@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { createServerSupabaseClient } from '@/src/lib/supabase/server'
 import { sendBookingEmail } from '@/src/lib/email/resend'
 import { z } from 'zod'
-import type { BookingStatus } from '@/types/types'
+import type { BookingStatus, PreferredContact, EmailEvent, QuoteRequestStatus } from '@/types/types'
 
 // ── Auth helper ─────────────────────────────────────────────────
 
@@ -26,13 +26,20 @@ export async function updateBookingStatus(
   const { supabase } = await requireAdmin()
 
   // Fetch current booking for email
-  const { data: booking, error: fetchErr } = await supabase
+  const { data: booking } = await supabase
     .from('bookings')
     .select('*')
     .eq('id', bookingId)
     .single()
 
-  if (fetchErr || !booking) return { success: false, error: 'Booking not found' }
+  // Cast booking to proper type since DB returns preferred_contact as string
+  if (!booking) return { success: false, error: 'Booking not found' }
+  
+  const typedBooking = {
+    ...booking,
+    preferred_contact: booking.preferred_contact as PreferredContact,
+    status: booking.status as BookingStatus
+  }
 
   // Update status
   const { error: updateErr } = await supabase
@@ -46,16 +53,16 @@ export async function updateBookingStatus(
   try {
     switch (newStatus) {
       case 'reviewing':
-        await sendBookingEmail({ event: 'booking_reviewing', booking })
+        await sendBookingEmail({ event: 'booking_created', booking: typedBooking })
         break
       case 'confirmed':
-        await sendBookingEmail({ event: 'booking_confirmed', booking })
+        await sendBookingEmail({ event: 'booking_confirmed', booking: typedBooking })
         break
       case 'rejected':
-        await sendBookingEmail({ event: 'booking_rejected', booking, meta: { reason: options?.reason } })
+        await sendBookingEmail({ event: 'booking_cancelled', booking: typedBooking, meta: { reason: options?.reason } })
         break
       case 'completed':
-        await sendBookingEmail({ event: 'booking_completed', booking })
+        await sendBookingEmail({ event: 'booking_completed', booking: typedBooking })
         break
     }
   } catch (emailErr) {
@@ -113,19 +120,26 @@ export async function deleteBooking(bookingId: string) {
 
 // ── Send manual email ───────────────────────────────────────────
 
-export async function sendManualEmail(bookingId: string, event: 'booking_confirmed' | 'booking_reviewing' | 'booking_completed') {
+export async function sendManualEmail(bookingId: string, event: EmailEvent) {
   const { supabase } = await requireAdmin()
 
-  const { data: booking, error } = await supabase
+  const { data: booking } = await supabase
     .from('bookings')
     .select('*')
     .eq('id', bookingId)
     .single()
 
-  if (error || !booking) return { success: false, error: 'Booking not found' }
+  if (!booking) return { success: false, error: 'Booking not found' }
 
   try {
-    await sendBookingEmail({ event, booking })
+    await sendBookingEmail({ 
+      event, 
+      booking: {
+        ...booking,
+        preferred_contact: booking.preferred_contact as PreferredContact,
+        status: booking.status as BookingStatus
+      }
+    })
     return { success: true }
   } catch (e) {
     return { success: false, error: (e as Error).message }
@@ -136,7 +150,7 @@ export async function sendManualEmail(bookingId: string, event: 'booking_confirm
 
 export async function updateQuoteStatus(
   quoteId: string,
-  status: import('@/types').QuoteStatus
+  status: QuoteRequestStatus
 ) {
   const { supabase } = await requireAdmin()
 

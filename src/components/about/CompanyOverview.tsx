@@ -1,6 +1,3 @@
-"use client";
-
-import { motion } from "framer-motion";
 import Image from "next/image";
 import heroImage from "@/src/assets/hero-av-equipment.jpg";
 
@@ -15,11 +12,7 @@ export default function CompanyOverview() {
   return (
     <section className="py-24 bg-background">
       <div className="container mx-auto px-4 grid lg:grid-cols-2 gap-12 items-center">
-        <motion.div
-          initial={{ opacity: 0, x: -30 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true }}
-        >
+        <div className="animate-fade-in-left">
           <h2 className="font-heading font-bold text-3xl md:text-4xl text-gradient-gold mb-6">
             About Silverline Technologies
           </h2>
@@ -34,7 +27,7 @@ export default function CompanyOverview() {
             {stats.map((stat) => (
               <div
                 key={stat.label}
-                className="glass-card rounded-xl p-4 text-center"
+                className="glass-card rounded-xl p-4 text-center animate-fade-in-up"
               >
                 <div className="font-black text-3xl text-accent">
                   {stat.value}
@@ -45,9 +38,9 @@ export default function CompanyOverview() {
               </div>
             ))}
           </div>
-        </motion.div>
+        </div>
 
-        <div className="relative aspect-[4/3] rounded-2xl overflow-hidden">
+        <div className="relative aspect-[4/3] rounded-2xl overflow-hidden animate-fade-in-right">
           <Image
             src={heroImage}
             alt="Professional AV team at work"

@@ -1,5 +1,3 @@
-"use client";
-
 import { Award, Users, Clock } from "lucide-react";
 
 const values = [
@@ -38,7 +36,7 @@ export default function ValuesSection() {
           {values.map((value, i) => (
             <div
               key={value.title}
-              className="glass-card rounded-2xl p-8 text-center"
+              className={`glass-card rounded-2xl p-8 text-center animate-fade-in-up animate-delay-${i * 200}`}
             >
               <div className="w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center mx-auto mb-6">
                 <value.icon className="w-8 h-8 text-accent" />

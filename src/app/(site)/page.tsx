@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import FAQ from "../../components/FAQ";
 import CTA from "../../components/home/CTA";
 import Features from "../../components/home/Features";
-import Hero from "../../components/home/Hero.client";
+import Hero from "../../components/home/Hero";
 import Portfolio from "../../components/home/Portfolio";
 import Services from "../../components/home/Services";
 import Testimonials from "../../components/Testimonial";
