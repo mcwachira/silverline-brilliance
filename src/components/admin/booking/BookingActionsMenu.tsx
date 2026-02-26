@@ -47,24 +47,42 @@ export default function BookingActionsMenu({ booking, onConfirm, onComplete, onC
     setOpen(false)
   }
 
-  const menuItems = [
+  type MenuItem = {
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    href?: string;
+    color?: string;
+    onClick?: () => void;
+    divider?: boolean;
+  }
+
+  const menuItems: MenuItem[] = [
     {
       label: 'View Details',
       icon: Eye,
-      href: `//admin/dashboard/bookings/${booking.id}`,
+      href: `/admin/dashboard/bookings/${booking.id}`,
     },
-    booking.status === 'pending' && {
+  ]
+
+  if (booking.status === 'pending') {
+    menuItems.push({
       label: 'Confirm Booking',
       icon: CheckCircle,
       color: '#28A745',
       onClick: () => { onConfirm(); setOpen(false) },
-    },
-    booking.status === 'confirmed' && {
+    })
+  }
+
+  if (booking.status === 'confirmed') {
+    menuItems.push({
       label: 'Mark Complete',
       icon: Star,
       color: 'var(--gold)',
       onClick: () => { onComplete(); setOpen(false) },
-    },
+    })
+  }
+
+  menuItems.push(
     {
       label: 'Reschedule',
       icon: CalendarRange,
@@ -75,21 +93,31 @@ export default function BookingActionsMenu({ booking, onConfirm, onComplete, onC
       label: 'Send Email',
       icon: Mail,
       onClick: handleSendEmail,
-    },
-    booking.status !== 'cancelled' && {
+    }
+  )
+
+  if (booking.status !== 'cancelled') {
+    menuItems.push({
       label: 'Cancel Booking',
       icon: XCircle,
       color: '#FFC107',
       onClick: () => { onCancel(); setOpen(false) },
+    })
+  }
+
+  menuItems.push(
+    {
+      label: '',
+      icon: () => null,
+      divider: true,
     },
     {
       label: 'Delete',
       icon: Trash2,
       color: '#DC3545',
       onClick: () => { onDelete(); setOpen(false) },
-      divider: true,
-    },
-  ].filter(Boolean) as NonNullable<typeof menuItems[number]>[]
+    }
+  )
 
   return (
     <div className="relative" ref={ref}>
@@ -110,7 +138,7 @@ export default function BookingActionsMenu({ booking, onConfirm, onComplete, onC
               {item.divider && <div className="my-1 mx-2 h-px" style={{ background: 'var(--border)' }} />}
               {'href' in item ? (
                 <Link
-                  href={item.href}
+                  href={item.href || ''}
                   className="flex items-center gap-2.5 px-3 py-2 text-sm transition-colors hover:bg-white/5"
                   style={{ color: item.color ?? 'var(--text-muted)' }}
                   onClick={() => setOpen(false)}
