@@ -187,10 +187,14 @@ export async function submitBooking(
   const bookingForEmail: Booking = {
     id: inserted?.id ?? "unknown",
     booking_reference: bookingReference,
+    
+    // Client Info
     full_name: data.fullName,
     email: data.email,
     phone: data.phone,
     company: data.company || null,
+    
+    // Event Info
     event_name: data.eventName,
     event_type:
       data.eventType === "Other"
@@ -198,28 +202,38 @@ export async function submitBooking(
         : data.eventType,
     event_date: data.eventDate,
     event_start_time: data.eventStartTime,
-    event_end_time: data.eventEndTime || undefined,
-    expected_attendees: data.expectedAttendees,
+    event_end_time: data.eventEndTime || null,
     venue_name: data.venueName,
-    venue_address: data.venueAddress || undefined,
-    selected_services: data.selectedServices,
-    special_requirements: data.specialRequirements || undefined,
-    budget_range: data.budgetRange || undefined,
-    how_heard: data.howHeard || undefined,
-    preferred_contact: data.preferredContact as "email" | "phone" | "whatsapp",
+    venue_address: data.venueAddress || null,
+    expected_attendees: data.expectedAttendees,
+    
+    // Services
+    selected_services: data.selectedServices || [],
+    special_requirements: data.specialRequirements || null,
+    budget_range: data.budgetRange || null,
+    
+    // Status
     status: "pending",
+    
+    // Metadata
+    preferred_contact: data.preferredContact,
+    how_heard: data.howHeard || null,
+    assigned_to: null,
+    internal_notes: null,
+    
+    // Timestamps
     created_at: now,
     updated_at: now,
   };
 
   // 6. Send emails — non-blocking (email failure must not fail the booking)
   //
-  //    booking_new      → notifies the admin that a new booking arrived
-  //    booking_reviewing → confirms to the customer their request was received
+  //    booking_created  → notifies the admin that a new booking arrived
+  //    booking_confirmed → confirms to the customer their request was received
   //
   Promise.allSettled([
-    sendBookingEmail({ event: "booking_new",      booking: bookingForEmail }),
-    sendBookingEmail({ event: "booking_reviewing", booking: bookingForEmail }),
+    sendBookingEmail({ event: "booking_created",    booking: bookingForEmail }),
+    sendBookingEmail({ event: "booking_confirmed",  booking: bookingForEmail }),
   ]).then((results) => {
     results.forEach((result, i) => {
       if (result.status === "rejected") {

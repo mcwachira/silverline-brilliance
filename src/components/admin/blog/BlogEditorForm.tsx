@@ -36,12 +36,12 @@ const blogSchema = z.object({
     .min(1, "Slug is required")
     .max(200)
     .regex(/^[a-z0-9-]+$/, "Slug can only contain lowercase letters, numbers, and hyphens"),
-  excerpt: z.string().max(400).optional().default(""),
-  authorId: z.string().optional().default(""),
-  categoryIds: z.array(z.string()).optional().default([]),
-  tags: z.array(z.string()).optional().default([]),
-  metaTitle: z.string().max(70).optional().default(""),
-  metaDescription: z.string().max(180).optional().default(""),
+  excerpt: z.string().max(400).optional(),
+  authorId: z.string().optional(),
+  categoryIds: z.array(z.string()).optional(),
+  tags: z.array(z.string()).optional(),
+  metaTitle: z.string().max(70).optional(),
+  metaDescription: z.string().max(180).optional(),
 });
 
 export type BlogFormValues = z.infer<typeof blogSchema>;

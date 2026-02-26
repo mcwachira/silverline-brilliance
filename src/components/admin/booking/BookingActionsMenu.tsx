@@ -40,7 +40,7 @@ export default function BookingActionsMenu({ booking, onConfirm, onComplete, onC
         body: JSON.stringify({ event: 'booking_confirmed', bookingId: booking.id }),
       })
       if (!res.ok) throw new Error()
-      toast.success('Email sent to ' + booking.client_email)
+      toast.success('Email sent to ' + booking.email)
     } catch {
       toast.error('Failed to send email')
     }
