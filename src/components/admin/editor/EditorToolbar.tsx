@@ -142,14 +142,16 @@ export default function EditorToolbar({ editor, onImageInserted }: Props) {
 
       const { assetRef, url } = result.data;
 
-      editor
-        .chain()
-        .focus()
-        .insertContent({
-          type: "sanityImage",
-          attrs: { assetRef, url, alt: file.name.replace(/\.[^.]+$/, "") },
-        })
-        .run();
+      if (editor) {
+        editor
+          .chain()
+          .focus()
+          .insertContent({
+            type: "sanityImage",
+            attrs: { assetRef, url, alt: file.name.replace(/\.[^.]+$/, "") },
+          })
+          .run();
+      }
 
       onImageInserted?.(assetRef, url);
       toast.success("Image inserted");
