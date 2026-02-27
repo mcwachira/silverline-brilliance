@@ -114,12 +114,12 @@ export default function EditorToolbar({ editor, onImageInserted }: Props) {
   }
 
   function handleSetLink(href: string) {
-    editor.chain().focus().extendMarkRange("link").setLink({ href }).run();
+    editor!.chain().focus().extendMarkRange("link").setLink({ href }).run();
     setLinkDialogOpen(false);
   }
 
   function handleRemoveLink() {
-    editor.chain().focus().extendMarkRange("link").unsetLink().run();
+    editor!.chain().focus().extendMarkRange("link").unsetLink().run();
     setLinkDialogOpen(false);
   }
 

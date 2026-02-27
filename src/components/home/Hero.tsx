@@ -23,7 +23,7 @@ const Hero = () => {
 
       <div className="relative z-10 container mx-auto px-4 text-center pt-20">
         <div className="animate-fade-in-up">
-          <h1 className="font-heading font-black text-6xl md:text-8xl text-gradient-gold uppercase animate-delay-200">
+          <h1 className="font-heading text-blue-700 text-6xl md:text-8xl text-gradient-gold uppercase animate-delay-200">
             Silverline
           </h1>
 
