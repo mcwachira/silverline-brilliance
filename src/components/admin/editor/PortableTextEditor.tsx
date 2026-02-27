@@ -66,17 +66,19 @@ const SanityImageNode = Node.create({
       altInput.addEventListener("change", (e) => {
         if (typeof getPos === "function") {
           const pos = getPos();
-          ed
-            .chain()
-            .setNodeSelection(pos)
-            .command(({ tr }) => {
-              tr.setNodeMarkup(pos, undefined, {
-                ...node.attrs,
-                alt: (e.target as HTMLInputElement).value,
-              });
-              return true;
-            })
-            .run();
+          if (pos !== undefined) {
+            ed
+              .chain()
+              .setNodeSelection(pos)
+              .command(({ tr }) => {
+                tr.setNodeMarkup(pos, undefined, {
+                  ...node.attrs,
+                  alt: (e.target as HTMLInputElement).value,
+                });
+                return true;
+              })
+              .run();
+          }
         }
       });
 
