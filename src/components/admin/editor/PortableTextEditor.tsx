@@ -90,11 +90,13 @@ const SanityImageNode = Node.create({
         e.preventDefault();
         if (typeof getPos === "function") {
           const pos = getPos();
-          ed
-            .chain()
-            .focus()
-            .deleteRange({ from: pos, to: pos + node.nodeSize })
-            .run();
+          if (pos !== undefined) {
+            ed
+              .chain()
+              .focus()
+              .deleteRange({ from: pos, to: pos + node.nodeSize })
+              .run();
+          }
         }
       });
 
@@ -211,7 +213,7 @@ const PortableTextEditor = forwardRef<PortableTextEditorHandle, Props>(
           root.style.boxShadow = "0 0 0 3px oklch(0.88 0.17 85 / 0.1)";
         }}
         onBlur={(e) => {
-          if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+          if (!e.currentTarget.contains(e.relatedTarget as EventTarget)) {
             const root = e.currentTarget as HTMLElement;
             root.style.borderColor = "var(--border)";
             root.style.boxShadow = "none";
