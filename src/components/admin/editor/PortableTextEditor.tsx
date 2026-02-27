@@ -213,7 +213,7 @@ const PortableTextEditor = forwardRef<PortableTextEditorHandle, Props>(
           root.style.boxShadow = "0 0 0 3px oklch(0.88 0.17 85 / 0.1)";
         }}
         onBlur={(e) => {
-          if (!e.currentTarget.contains(e.relatedTarget as EventTarget)) {
+          if (!e.currentTarget.contains(e.relatedTarget as Node)) {
             const root = e.currentTarget as HTMLElement;
             root.style.borderColor = "var(--border)";
             root.style.boxShadow = "none";
