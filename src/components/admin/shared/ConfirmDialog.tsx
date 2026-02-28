@@ -1,7 +1,7 @@
 'use client'
 
 import { AlertTriangle, X } from 'lucide-react'
-import type { ConfirmDialogProps } from '@/types'
+import type { ConfirmDialogProps } from '@/types/types'
 
 export default function ConfirmDialog({
   open, title, description, confirmLabel = 'Confirm',

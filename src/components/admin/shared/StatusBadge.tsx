@@ -1,10 +1,10 @@
 // components/admin/shared/StatusBadge.tsx
 
 import { cn } from "@/src/lib/utils";
-import type { QuoteStatus } from "@/types/admin";
+import type { QuoteDocumentStatus} from "@/types/admin";
 
 type BadgeVariant =
-  | QuoteStatus
+  | QuoteDocumentStatus
   | "unread" | "read" | "replied" | "archived"
   | "pending" | "reviewing" | "confirmed" | "completed" | "rejected"
   | "published" | "draft" | "scheduled";
