@@ -12,14 +12,13 @@ import {
 } from "@/src/components/ui/dropdown-menu";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
-import {
-  Eye, MoreHorizontal, Trash2, Download, Search, RefreshCw,
-} from "lucide-react";
+import { Eye, MoreHorizontal, RefreshCw, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { StatusBadge } from "@/src/components/admin/shared/StatusBadge";
 import { EmptyState } from "@/src/components/admin/shared/EmptyState";
 import { deleteQuote } from "@/src/app/actions/quote-actions";
-import type { QuoteRequest, QuoteRequestStatus } from "@/src/app/actions/quote-actions";
+import type { QuoteRequest } from "@/src/app/actions/quote-actions";
+import { QuoteRequestStatus } from "@/types/types";
 
 // ── Status filter tabs ────────────────────────────────────────────
 
@@ -77,16 +76,7 @@ export function QuotesTable({ quotes }: QuotesTableProps) {
     });
   }
 
-  async function handleDownload(quote: Quote) {
-    try {
-      const { downloadQuotePDF } = await import("@/src/lib/pdf/quote-pdf");
-      await downloadQuotePDF(quote);
-      toast.success("PDF downloaded");
-    } catch {
-      toast.error("Failed to generate PDF");
-    }
-  }
-
+  
   // Tab counts
   const counts = STATUS_TABS.reduce<Record<string, number>>((acc, t) => {
     acc[t.value] = t.value === "all"
@@ -228,15 +218,9 @@ export function QuotesTable({ quotes }: QuotesTableProps) {
                       >
                         <DropdownMenuItem
                           className="gap-2 text-sm text-[var(--text-muted)] hover:text-[var(--text)] cursor-pointer"
-                          onClick={() => router.push(`/dashboard/quotes/${quote.id}`)}
+                          onClick={() => window.location.href = `/admin/dashboard/quotes/${quote.id}`}
                         >
                           <Eye className="w-3.5 h-3.5" /> View Quote
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="gap-2 text-sm text-[var(--text-muted)] hover:text-[var(--text)] cursor-pointer"
-                          onClick={() => handleDownload(quote)}
-                        >
-                          <Download className="w-3.5 h-3.5" /> Download PDF
                         </DropdownMenuItem>
                         <DropdownMenuSeparator className="bg-[var(--border)]" />
                         <DropdownMenuItem
