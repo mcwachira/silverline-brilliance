@@ -7,7 +7,7 @@ import type { QuoteRequestStatus } from "@/types/types";
 import type { ActionResult } from "@/types/admin";
 import type { Database } from "@/src/lib/supabase/database.types";
 
-type QuoteRequest = Database['public']['Tables']['quote_requests']['Row'];
+export type QuoteRequest = Database['public']['Tables']['quote_requests']['Row'];
 
 // ── Fetch all quotes ─────────────────────────────────────────────
 
