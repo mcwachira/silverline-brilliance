@@ -88,7 +88,13 @@ export function SettingsTabs({ profile }: SettingsTabsProps) {
           <p className="text-xs text-[var(--text-faint)] mb-6">
             Control which emails you receive from the admin dashboard.
           </p>
-          <NotificationsForm settings={profile.notification_settings} />
+          <NotificationsForm settings={profile.notification_settings || {
+          new_booking: false,
+          booking_confirmed: false,
+          booking_cancelled: false,
+          new_message: false,
+          email_digest: false
+        }} />
         </div>
       )}
 
