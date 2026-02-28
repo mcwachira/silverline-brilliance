@@ -214,7 +214,7 @@ const PortableTextEditor = forwardRef<PortableTextEditorHandle, Props>(
         }}
         onBlur={(e) => {
           const relatedTarget = e.relatedTarget;
-          if (relatedTarget && typeof getPos === "function" && typeof relatedTarget.contains === "function") {
+          if (relatedTarget && typeof relatedTarget.contains === "function") {
             if (!relatedTarget.contains(e.currentTarget)) {
               const root = e.currentTarget as HTMLElement;
               root.style.borderColor = "var(--border)";
