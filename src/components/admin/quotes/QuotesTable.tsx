@@ -15,6 +15,7 @@ import { Input } from "@/src/components/ui/input";
 import { Eye, MoreHorizontal, RefreshCw, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { StatusBadge } from "@/src/components/admin/shared/StatusBadge";
+import type { BadgeVariant } from "@/src/components/admin/shared/StatusBadge";
 import { EmptyState } from "@/src/components/admin/shared/EmptyState";
 import { deleteQuote } from "@/src/app/actions/quote-actions";
 import type { QuoteRequest } from "@/src/app/actions/quote-actions";
@@ -200,7 +201,7 @@ export function QuotesTable({ quotes }: QuotesTableProps) {
 
                   {/* Status */}
                   <TableCell className="px-4 py-3.5">
-                    <StatusBadge status={quote.status} />
+                    <StatusBadge status={quote.status as BadgeVariant} />
                   </TableCell>
 
                   {/* Actions */}

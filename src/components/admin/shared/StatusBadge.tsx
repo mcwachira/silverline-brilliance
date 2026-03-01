@@ -3,11 +3,12 @@
 import { cn } from "@/src/lib/utils";
 import type { QuoteDocumentStatus} from "@/types/admin";
 
-type BadgeVariant =
+export type BadgeVariant =
   | QuoteDocumentStatus
   | "unread" | "read" | "replied" | "archived"
-  | "pending" | "reviewing" | "confirmed" | "completed" | "rejected"
-  | "published" | "draft" | "scheduled";
+  | "pending" | "reviewing" | "confirmed" | "completed" | "rejected" | "cancelled" | "rescheduled"
+  | "published" | "draft" | "scheduled"
+  | "new" | "contacted" | "converted" | "closed";
 
 interface StatusBadgeProps {
   status: BadgeVariant;
@@ -34,9 +35,16 @@ const config: Record<
   reviewing: { label: "Reviewing", dot: "bg-[var(--info)]",         bg: "bg-[var(--info)]/10",         text: "text-[var(--info)]",         border: "border-[var(--info)]/25" },
   confirmed: { label: "Confirmed", dot: "bg-[var(--info)]",         bg: "bg-[var(--info)]/10",         text: "text-[var(--info)]",         border: "border-[var(--info)]/25" },
   completed: { label: "Completed", dot: "bg-[var(--success)]",      bg: "bg-[var(--success)]/10",      text: "text-[var(--success)]",      border: "border-[var(--success)]/25" },
+  cancelled: { label: "Cancelled", dot: "bg-[var(--destructive)]",  bg: "bg-[var(--destructive)]/10",  text: "text-[var(--destructive)]",  border: "border-[var(--destructive)]/25" },
+  rescheduled: { label: "Rescheduled", dot: "bg-[var(--warning)]",  bg: "bg-[var(--warning)]/10",  text: "text-[var(--warning)]",  border: "border-[var(--warning)]/25" },
   // Blog
   published: { label: "Published", dot: "bg-[var(--success)]",      bg: "bg-[var(--success)]/10",      text: "text-[var(--success)]",      border: "border-[var(--success)]/25" },
   scheduled: { label: "Scheduled", dot: "bg-[var(--warning)]",      bg: "bg-[var(--warning)]/10",      text: "text-[var(--warning)]",      border: "border-[var(--warning)]/25" },
+  // Quote Requests
+  new:       { label: "New",       dot: "bg-[var(--accent)]",       bg: "bg-[var(--accent)]/10",       text: "text-[var(--accent)]",       border: "border-[var(--accent)]/25" },
+  contacted:  { label: "Contacted", dot: "bg-[var(--info)]",         bg: "bg-[var(--info)]/10",         text: "text-[var(--info)]",         border: "border-[var(--info)]/25" },
+  converted:  { label: "Converted", dot: "bg-[var(--success)]",      bg: "bg-[var(--success)]/10",      text: "text-[var(--success)]",      border: "border-[var(--success)]/25" },
+  closed:     { label: "Closed",    dot: "bg-[var(--text-faint)]",   bg: "bg-[var(--text-faint)]/10",   text: "text-[var(--text-faint)]",   border: "border-[var(--text-faint)]/25" },
 };
 
 export function StatusBadge({ status, className }: StatusBadgeProps) {
@@ -44,7 +52,7 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
   return (
     <span className={cn(
       "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide uppercase border",
-      c.bg, c.text, c.border, className
+      c.bg, c.text, c.border, className || ""
     )}>
       <span className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", c.dot)} />
       {c.label}
