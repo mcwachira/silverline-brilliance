@@ -105,7 +105,7 @@ const Testimonials = () => {
               <Quote className="w-12 h-12 text-accent/30 mx-auto mb-6" />
 
               <p className="text-foreground text-lg md:text-xl leading-relaxed mb-8 italic">
-                "{testimonials[currentIndex].content}"
+                `&quot;`{testimonials[currentIndex].content}`&quot;`
               </p>
 
               {/* Rating */}

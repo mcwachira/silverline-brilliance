@@ -1,5 +1,3 @@
-"use client";
-import { LazyMotion, domAnimation, m } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
@@ -7,57 +5,60 @@ import { Button } from "@/src/components/ui/button";
 
 import heroImage from "@/src/assets/hero-av-equipment.jpg";
 
-const Hero = () => {
+export default function Hero() {
   return (
-    <section className="realtive min-h-screen flex items-center justify-center overflow-hidden gradient-hero">
-      <div className="absolute inset-0">
+    <section
+      className="relative flex min-h-screen items-center justify-center overflow-hidden"
+      aria-label="Hero section"
+    >
+      {/* Background Image Layer */}
+      <div className="absolute inset-0 bg-background">
         <Image
           src={heroImage}
-          alt="Professional audiovisual equipment"
+          alt="Professional audiovisual equipment setup with mixing console and stage lighting"
           fill
           priority
-          sizes="(min-width: 1024px) 100vw, 100vw"
-          className="object-cover opacity-30"
+          sizes="100vw"
+          quality={85}
+          placeholder="blur"
+          className="object-cover opacity-25"
         />
-        <div className="absolute inset-0 gradient-hero opacity-80" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-background/80 to-background" />
       </div>
 
-      <div className="relative z-10 container mx-auto px-4 text-center pt-20 ">
-        <LazyMotion features={domAnimation}>
-          <m.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="font-heading font-black text-6xl md:text-8xl text-gradient-gold uppercase"
-          >
+      {/* Content */}
+      <div className="container relative z-10 mx-auto px-4 pt-20 text-center">
+        <div className="mx-auto max-w-4xl">
+          {/* Main Heading - Gold */}
+          <h1 className="font-heading text-6xl font-bold uppercase tracking-tight text-gold md:text-8xl lg:text-9xl">
             Silverline
-          </m.h1>
+          </h1>
 
-          <m.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="mt-4 text-foreground text-4xl font-bold uppercase"
-          >
+          {/* Subheading */}
+          <p className="mt-4 text-3xl font-semibold uppercase tracking-wide text-foreground md:text-4xl lg:text-5xl">
             Technologies
-          </m.p>
+          </p>
 
-          <m.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="mt-10 flex justify-center gap-4"
-          >
+          {/* Tagline */}
+          <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground md:text-xl">
+            Elevating events with cutting-edge audiovisual solutions across
+            Kenya
+          </p>
+
+          {/* CTA Button */}
+          <div className="mt-10 flex justify-center gap-4">
             <Button variant="gold" size="lg" asChild>
-              <Link href="/contact">
-                Get Started <ArrowRight className="ml-2 w-5 h-5" />
+              <Link href="/contact" className="group">
+                Get Started
+                <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
               </Link>
             </Button>
-          </m.div>
-        </LazyMotion>
+          </div>
+        </div>
       </div>
+
+      {/* Decorative Element */}
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
     </section>
   );
-};
-
-export default Hero;
+}
