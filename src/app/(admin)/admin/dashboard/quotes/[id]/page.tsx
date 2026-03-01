@@ -6,6 +6,7 @@ import { createServerSupabaseClient } from "@/src/lib/supabase/server";
 import { getQuote } from "@/src/app/actions/quote-actions";
 import { PageHeader } from "@/src/components/admin/shared/PageHeader";
 import { StatusBadge } from "@/src/components/admin/shared/StatusBadge";
+import type { BadgeVariant } from "@/src/components/admin/shared/StatusBadge";
 import { Button } from "@/src/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 
@@ -43,7 +44,7 @@ export default async function ViewQuotePage({ params }: Props) {
             <ArrowLeft className="w-4 h-4" /> Back
           </Link>
         </Button>
-        <StatusBadge status={q.status} />
+        <StatusBadge status={q.status as BadgeVariant} />
       </PageHeader>
 
       {/* ── Meta grid ───────────────────── */}
