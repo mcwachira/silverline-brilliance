@@ -1,6 +1,13 @@
 import { Camera, Users, Check } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
-const features = [
+interface Feature {
+  title: string;
+  icon: LucideIcon;
+  description: string;
+}
+
+const features: Feature[] = [
   {
     title: "Professional Equipment",
     icon: Camera,
@@ -20,21 +27,34 @@ const features = [
 
 export default function Features() {
   return (
-    <section className="py-24 bg-background">
+    <section
+      className="bg-background py-20 md:py-28"
+      aria-labelledby="features-heading"
+    >
       <div className="container mx-auto px-4">
-        <h2 className="sr-only">Why choose Silverline Technologies</h2>
-          <div className="grid md:grid-cols-3 gap-8">
-          {features.map((f, i) => (
-            <div
-              key={f.title}
-              className="glass-card p-8 rounded-2xl text-center"
-            >
-              <f.icon className="mx-auto mb-4 text-accent w-8 h-8" />
-              <h3 className="font-bold mb-2">{f.title}</h3>
-              <p className="text-muted-foreground">{f.description}</p>
-            </div>
-          ))}
-          </div>
+        <h2 id="features-heading" className="sr-only">
+          Why Choose Silverline Technologies
+        </h2>
+
+        <div className="grid gap-8 md:grid-cols-3">
+          {features.map((feature) => {
+            const Icon = feature.icon;
+            return (
+              <article
+                key={feature.title}
+                className="glass-card rounded-2xl p-8 text-center transition-all duration-300 hover:scale-105"
+              >
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-accent/10 ring-2 ring-accent/20">
+                  <Icon className="h-8 w-8 text-accent" aria-hidden="true" />
+                </div>
+                <h3 className="mb-2 font-heading text-xl font-bold">
+                  {feature.title}
+                </h3>
+                <p className="text-muted-foreground">{feature.description}</p>
+              </article>
+            );
+          })}
+        </div>
       </div>
     </section>
   );
