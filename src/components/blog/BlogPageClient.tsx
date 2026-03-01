@@ -8,7 +8,8 @@ import BlogFeaturedPost from "./BlogFeaturedPost";
 import {BlogCard} from "./BlogCard";
 import {BlogSidebar} from "./BlogSidebar";
 import {BlogPagination} from "./BlogPagination";
-import {NewsletterForm} from "../newsletter/NewsletterForm";
+
+
 
 interface BlogPageClientProps {
   posts: any[];
@@ -114,7 +115,6 @@ export default function BlogPageClient({ posts, categories }: BlogPageClientProp
 
       <BlogCategoryFilter
         activeCategory={activeCategory}
-        categories={["All Posts", ...categories.map((c) => c.name)]}
         onCategoryChange={handleCategoryClick}
         sortOrder={sortOrder}
         onSortChange={setSortOrder}
@@ -167,9 +167,6 @@ export default function BlogPageClient({ posts, categories }: BlogPageClientProp
                         <BlogCard
                           key={post._id}
                           post={post}
-                          index={index}
-                          formatDate={formatDate}
-                          getImageUrl={getImageUrl}
                         />
                       ))}
                     </div>
@@ -180,29 +177,30 @@ export default function BlogPageClient({ posts, categories }: BlogPageClientProp
                   )}
 
                   <BlogPagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={setCurrentPage}
+                    paginationInfo={{
+                      currentPage,
+                      totalPages,
+                      totalPosts: filteredAndSortedPosts.length,
+                      postsPerPage,
+                      hasNextPage: currentPage < totalPages,
+                      hasPreviousPage: currentPage > 1
+                    }}
                   />
                 </div>
 
                 {/* Sidebar */}
                 <BlogSidebar
-                  posts={posts.slice(0, 5)}
+                  recentPosts={posts.slice(0, 5)}
                   categories={categoryCounts}
                   tags={tags}
-                  formatDate={formatDate}
-                  onCategoryClick={handleCategoryClick}
-                  onTagClick={handleTagClick}
-                  getImageUrl={getImageUrl}
                 />
               </div>
             </div>
           </section>
         </>
       )}
-
-      <NewsletterForm/>
+{/* 
+      <NewsletterForm/> */}
     </div>
   );
 }

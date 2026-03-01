@@ -16,7 +16,7 @@ interface BlogCardProps {
 
 export function BlogCard({ post, variant = 'default', priority = false }: BlogCardProps) {
   const imageUrl = getImageUrl(post);
-  const postUrl = BLOG_ROUTES.POST(post.slug);
+  const postUrl = BLOG_ROUTES.POST(post.slug.current);
 
   if (variant === 'featured') {
     return (

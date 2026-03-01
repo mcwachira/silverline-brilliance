@@ -3,8 +3,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Calendar, Clock, ArrowRight, User } from "lucide-react";
-import { BlogPost } from "@/types/blog";
-import { formatDate } from "@/src/lib/blogUtils";
+import { BlogPost } from "@/src/lib/blog/types";
+import { formatDate } from "@/src/lib/blog/utils";
 
 interface FeaturedPostProps {
   post: BlogPost;
@@ -13,7 +13,7 @@ interface FeaturedPostProps {
 export default function FeaturedPost({ post }: FeaturedPostProps) {
   return (
     <section className="container mx-auto px-4 py-12">
-      <Link href={`/blog/${post.slug}`} className="group block">
+      <Link href={`/blog/${post.slug.current}`} className="group block">
         <div className="relative overflow-hidden rounded-2xl bg-card shadow-2xl transition-all duration-500 hover:-translate-y-2 hover:shadow-accent/20">
           {/* Featured Image */}
           <div className="relative aspect-video overflow-hidden">

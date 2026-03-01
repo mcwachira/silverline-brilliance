@@ -1,5 +1,5 @@
-import { BlogPost } from '@/lib/blog/types';
-import { BlogCard } from '../blog-card';
+import { BlogPost } from '@/src/lib/blog/types';
+import { BlogCard } from './BlogCard';
 
 interface RelatedPostsProps {
   posts: BlogPost[];

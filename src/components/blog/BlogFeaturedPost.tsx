@@ -82,7 +82,7 @@ const BlogFeaturedPost = ({ post, formatDate, getImageUrl }: BlogFeaturedPostPro
                   {post.author?.name || 'Silverline Team'}
                 </span>
 
-                <Button variant="gold-outline" size="sm" className="group-hover:bg-accent group-hover:text-accent-foreground transition-all">
+                <Button variant="outline" size="sm" className="border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent)] hover:text-[var(--accent-foreground)] transition-all">
                   Read More
                   <ArrowRight className="w-4 h-4 ml-1 transition-transform group-hover:translate-x-1" />
                 </Button>
