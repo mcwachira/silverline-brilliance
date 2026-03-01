@@ -32,7 +32,10 @@ const NavbarClient = ({ navLinks }: NavbarClientProps) => {
 
   if (!mounted) {
     return (
-      <button className="lg:hidden p-2 text-foreground" aria-label="Loading Menu">
+      <button
+        className="lg:hidden p-2 text-foreground"
+        aria-label="Loading Menu"
+      >
         <div className="w-6 h-6 bg-gray-200 animate-pulse rounded"></div>
       </button>
     );
