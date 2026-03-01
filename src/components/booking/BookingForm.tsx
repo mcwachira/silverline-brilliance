@@ -29,7 +29,7 @@ export function BookingForm() {
   const [isPending, startTransition] = useTransition()
 
   const methods = useForm<BookingFormValues>({
-    resolver: zodResolver(bookingSchema),
+    resolver: zodResolver(bookingSchema) as any,
     // Validate on blur (not on every keystroke) to avoid layout thrash
     // but re-validate onChange after the first submit attempt
     mode: 'onTouched',

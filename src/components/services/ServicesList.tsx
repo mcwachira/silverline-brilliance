@@ -172,7 +172,7 @@ const ServicesList = () => {
                   ))}
                 </ul>
 
-                <Button variant="gold-outline" asChild>
+                <Button variant="outline" className="border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent)] hover:text-[var(--accent-foreground)]" asChild>
                   <Link href="/contact">
                     Get a Quote
                     <ArrowRight className="w-4 h-4 ml-2" />

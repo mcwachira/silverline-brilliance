@@ -1,6 +1,5 @@
 'use client'
 import { Check } from 'lucide-react'
-import { cn } from '@/src/lib/utils'
 import { STEP_LABELS, TOTAL_STEPS } from '@/src/lib/booking/constants'
 
 interface BookingProgressProps {
@@ -37,12 +36,11 @@ export function BookingProgress({ currentStep, totalSteps = TOTAL_STEPS }: Booki
             >
               {/* Dot */}
               <div
-                className={cn(
-                  'flex h-9 w-9 items-center justify-center rounded-full border-2 text-xs font-bold transition-all duration-300',
-                  isCompleted && 'border-purple-400 bg-purple-500 text-white shadow-lg shadow-purple-500/50',
-                  isActive && 'border-purple-400 bg-slate-900 text-purple-300 ring-4 ring-purple-500/20',
-                  isPending && 'border-slate-700 bg-slate-800 text-slate-500',
-                )}
+                className={`flex h-9 w-9 items-center justify-center rounded-full border-2 text-xs font-bold transition-all duration-300 ${
+                  isCompleted ? 'border-purple-400 bg-purple-500 text-white shadow-lg shadow-purple-500/50' : 
+                  isActive ? 'border-purple-400 bg-slate-900 text-purple-300 ring-4 ring-purple-500/20' : 
+                  isPending ? 'border-slate-700 bg-slate-800 text-slate-500' : ''
+                }`}
               >
                 {isCompleted ? (
                   <Check className="h-4 w-4" aria-hidden="true" />
@@ -53,12 +51,11 @@ export function BookingProgress({ currentStep, totalSteps = TOTAL_STEPS }: Booki
 
               {/* Label — visible on sm+ */}
               <span
-                className={cn(
-                  'hidden text-[10px] font-medium sm:block',
-                  isActive && 'text-purple-300',
-                  isCompleted && 'text-purple-400',
-                  isPending && 'text-slate-500',
-                )}
+                className={`hidden text-[10px] font-medium sm:block ${
+                  isActive ? 'text-purple-300' : 
+                  isCompleted ? 'text-purple-400' : 
+                  isPending ? 'text-slate-500' : ''
+                }`}
               >
                 {label}
               </span>
