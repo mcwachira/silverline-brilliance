@@ -1,52 +1,58 @@
-import { Metadata } from 'next';
+import { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/src/components/ui/button";
 import AboutHero from "@/src/components/about/AboutHero";
 import PurposeSection from "@/src/components/about/PurposeSection";
 import ValuesSection from "@/src/components/about/ValueSection";
 import CompanyOverview from "@/src/components/about/CompanyOverview";
-import { OrganizationSchema, BreadcrumbSchema } from "@/src/components/seo/StructuredData";
+import {
+  OrganizationSchema,
+  BreadcrumbSchema,
+} from "@/src/components/seo/StructuredData";
 
 export const metadata: Metadata = {
-  title: 'About Silverline Technologies | Professional AV Company Kenya',
-  description: 'Learn about Silverline Technologies - Kenya\'s leading audiovisual services company providing live streaming, event coverage, photography, and professional AV solutions since 2020.',
+  title: "About Silverline Technologies | Professional AV Company Kenya",
+  description:
+    "Learn about Silverline Technologies - Kenya's leading audiovisual services company providing live streaming, event coverage, photography, and professional AV solutions since 2020.",
   keywords: [
-    'about Silverline Technologies',
-    'AV company Kenya',
-    'audiovisual company Nairobi',
-    'professional AV services',
-    'event production company',
-    'live streaming Kenya',
-    'corporate events Kenya',
-    'Silverline Technologies team'
+    "about Silverline Technologies",
+    "AV company Kenya",
+    "audiovisual company Nairobi",
+    "professional AV services",
+    "event production company",
+    "live streaming Kenya",
+    "corporate events Kenya",
+    "Silverline Technologies team",
   ],
   openGraph: {
-    title: 'About Silverline Technologies | Professional AV Company Kenya',
-    description: 'Learn about Silverline Technologies - Kenya\'s leading audiovisual services company providing live streaming, event coverage, photography, and professional AV solutions since 2020.',
-    url: '/about',
+    title: "About Silverline Technologies | Professional AV Company Kenya",
+    description:
+      "Learn about Silverline Technologies - Kenya's leading audiovisual services company providing live streaming, event coverage, photography, and professional AV solutions since 2020.",
+    url: "/about",
     images: [
       {
-        url: '/og-about.jpg',
+        url: "/og-about.jpg",
         width: 1200,
         height: 630,
-        alt: 'About Silverline Technologies - Professional AV Company',
+        alt: "About Silverline Technologies - Professional AV Company",
       },
     ],
   },
   twitter: {
-    title: 'About Silverline Technologies | Professional AV Company Kenya',
-    description: 'Learn about Silverline Technologies - Kenya\'s leading audiovisual services company providing live streaming, event coverage, photography, and professional AV solutions since 2020.',
-    images: ['/og-about.jpg'],
+    title: "About Silverline Technologies | Professional AV Company Kenya",
+    description:
+      "Learn about Silverline Technologies - Kenya's leading audiovisual services company providing live streaming, event coverage, photography, and professional AV solutions since 2020.",
+    images: ["/og-about.jpg"],
   },
   alternates: {
-    canonical: '/about',
+    canonical: "/about",
   },
 };
 
 const AboutPage = () => {
   const breadcrumbItems = [
-    { name: 'Home', url: '/' },
-    { name: 'About', url: '/about' },
+    { name: "Home", url: "/" },
+    { name: "About", url: "/about" },
   ];
 
   return (
