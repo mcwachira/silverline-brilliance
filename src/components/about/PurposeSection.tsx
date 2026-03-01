@@ -1,58 +1,74 @@
-import { Target, Eye, Heart } from "lucide-react";
+import { Target, Eye, Heart } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+
+interface PurposeItem {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+}
+
+const purposeItems: PurposeItem[] = [
+  {
+    icon: Target,
+    title: 'Our Mission',
+    description:
+      'To deliver innovative and reliable audiovisual solutions that empower our clients to create impactful and memorable experiences.',
+  },
+  {
+    icon: Eye,
+    title: 'Our Vision',
+    description:
+      'To be the leading audiovisual company recognized for excellence, innovation, and client satisfaction across the region.',
+  },
+  {
+    icon: Heart,
+    title: 'Our Values',
+    description:
+      'Excellence, integrity, innovation, and customer-centricity guide everything we do.',
+  },
+];
 
 export default function PurposeSection() {
   return (
-    <section className="py-24 gradient-primary">
+    <section
+      className="bg-gradient-to-br from-primary via-primary-dark to-background py-20 md:py-28"
+      aria-labelledby="purpose-heading"
+    >
       <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
-          <h2 className="font-heading font-bold text-3xl md:text-4xl uppercase tracking-widest mb-4">
+        {/* Section Header */}
+        <header className="mb-16 text-center">
+          <h2
+            id="purpose-heading"
+            className="mb-4 font-heading text-3xl font-bold uppercase tracking-wider text-foreground md:text-4xl"
+          >
             Our Purpose
           </h2>
-          <div className="w-24 h-1 bg-accent mx-auto" />
-        </div>
+          <div className="mx-auto h-1 w-20 bg-accent" />
+        </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Mission */}
-          <div className="glass-card rounded-2xl p-8 text-center">
-            <div className="w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center mx-auto mb-6">
-              <Target className="w-8 h-8 text-accent" />
-            </div>
-            <h3 className="font-heading font-bold text-xl text-accent mb-4">
-              Our Mission
-            </h3>
-            <p className="text-muted-foreground">
-              To deliver innovative and reliable audiovisual solutions that
-              empower our clients to create impactful and memorable experiences.
-            </p>
-          </div>
+        {/* Purpose Cards */}
+        <div className="grid gap-8 md:grid-cols-3">
+          {purposeItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <article
+                key={item.title}
+                className="glass-card group rounded-2xl p-8 text-center transition-all duration-300 hover:scale-105"
+              >
+                <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-accent/20 ring-2 ring-accent/30 transition-transform group-hover:scale-110">
+                  <Icon className="h-8 w-8 text-accent" aria-hidden="true" />
+                </div>
 
-          {/* Vision */}
-          <div className="glass-card rounded-2xl p-8 text-center">
-            <div className="w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center mx-auto mb-6">
-              <Eye className="w-8 h-8 text-accent" />
-            </div>
-            <h3 className="font-heading font-bold text-xl text-accent mb-4">
-              Our Vision
-            </h3>
-            <p className="text-muted-foreground">
-              To be the leading audiovisual company recognized for excellence,
-              innovation, and client satisfaction across the region.
-            </p>
-          </div>
+                <h3 className="mb-4 font-heading text-xl font-bold text-accent">
+                  {item.title}
+                </h3>
 
-          {/* Values */}
-          <div className="glass-card rounded-2xl p-8 text-center">
-            <div className="w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center mx-auto mb-6">
-              <Heart className="w-8 h-8 text-accent" />
-            </div>
-            <h3 className="font-heading font-bold text-xl text-accent mb-4">
-              Our Values
-            </h3>
-            <p className="text-muted-foreground">
-              Excellence, integrity, innovation, and customer-centricity guide
-              everything we do.
-            </p>
-          </div>
+                <p className="leading-relaxed text-muted-foreground">
+                  {item.description}
+                </p>
+              </article>
+            );
+          })}
         </div>
       </div>
     </section>
