@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Playfair_Display, DM_Sans } from "next/font/google";
 import { Suspense } from "react";
 import "../globals.css";
 import { AppProviders } from "@/src/app/providers";
@@ -7,91 +7,96 @@ import Navbar from "@/src/components/Navbar";
 import Footer from "@/src/components/Footer";
 import WhatsAppButton from "@/src/components/WhatsAppButton";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const playfair = Playfair_Display({
   subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  variable: "--font-heading",
   display: "swap",
-  preload: true,
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const dmSans = DM_Sans({
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600"],
+  variable: "--font-body",
   display: "swap",
-  preload: false,
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://silverline-brilliance.com'),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "https://silverline-brilliance.com",
+  ),
   title: {
-    default: 'Silverline Technologies | Professional AudioVisual Services',
-    template: '%s | Silverline Technologies'
+    default: "Silverline Technologies | Professional AudioVisual Services",
+    template: "%s | Silverline Technologies",
   },
-  description: 'Silverline Technologies offers professional audiovisual services including live streaming, event coverage, photography, sound systems, and stage lighting for corporate events and productions across Kenya.',
+  description:
+    "Silverline Technologies offers professional audiovisual services including live streaming, event coverage, photography, sound systems, and stage lighting for corporate events and productions across Kenya.",
   keywords: [
-    'audiovisual services',
-    'live streaming',
-    'event coverage',
-    'corporate events',
-    'photography services',
-    'sound systems',
-    'stage lighting',
-    'video production',
-    'hybrid events',
-    'event production Kenya',
-    'professional AV services',
-    'Silverline Technologies'
+    "audiovisual services",
+    "live streaming",
+    "event coverage",
+    "corporate events",
+    "photography services",
+    "sound systems",
+    "stage lighting",
+    "video production",
+    "hybrid events",
+    "event production Kenya",
+    "professional AV services",
+    "Silverline Technologies",
   ],
-  authors: [{ name: 'Silverline Technologies' }],
-  creator: 'Silverline Technologies',
-  publisher: 'Silverline Technologies',
+  authors: [{ name: "Silverline Technologies" }],
+  creator: "Silverline Technologies",
+  publisher: "Silverline Technologies",
   robots: {
     index: true,
     follow: true,
     googleBot: {
       index: true,
       follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
     },
   },
   openGraph: {
-    type: 'website',
-    locale: 'en_US',
+    type: "website",
+    locale: "en_US",
     url: process.env.NEXT_PUBLIC_SITE_URL,
-    siteName: 'Silverline Technologies',
-    title: 'Silverline Technologies | Professional AudioVisual Services',
-    description: 'Professional audiovisual services including live streaming, event coverage, photography, sound systems, and stage lighting for corporate events.',
+    siteName: "Silverline Technologies",
+    title: "Silverline Technologies | Professional AudioVisual Services",
+    description:
+      "Professional audiovisual services including live streaming, event coverage, photography, sound systems, and stage lighting for corporate events.",
     images: [
       {
-        url: '/og-image.jpg',
+        url: "/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: 'Silverline Technologies - Professional AudioVisual Services',
+        alt: "Silverline Technologies - Professional AudioVisual Services",
       },
     ],
   },
   twitter: {
-    card: 'summary_large_image',
-    title: 'Silverline Technologies | Professional AudioVisual Services',
-    description: 'Professional audiovisual services including live streaming, event coverage, photography, sound systems, and stage lighting.',
-    images: ['/og-image.jpg'],
-    creator: '@silverlinetech',
+    card: "summary_large_image",
+    title: "Silverline Technologies | Professional AudioVisual Services",
+    description:
+      "Professional audiovisual services including live streaming, event coverage, photography, sound systems, and stage lighting.",
+    images: ["/og-image.jpg"],
+    creator: "@silverlinetech",
   },
   icons: {
     icon: [
-      { url: '/favicon.ico', sizes: 'any' },
-      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
-      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
     ],
     apple: [
-      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
     ],
   },
-  manifest: '/site.webmanifest',
+  manifest: "/site.webmanifest",
   alternates: {
-    canonical: '/',
+    canonical: "/",
   },
 };
 
@@ -102,20 +107,23 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${playfair.variable} ${dmSans.variable} antialiased`}>
         <AppProviders>
           <div className="min-h-screen flex flex-col">
-            <div className="h-16 lg:h-20" style={{ minHeight: '4rem' }}>
+            <div className="h-16 lg:h-20" style={{ minHeight: "4rem" }}>
               <Navbar />
             </div>
             <main className="flex-grow">
-              <Suspense fallback={
-                <div className="min-h-screen flex items-center justify-center bg-background" style={{ minHeight: '100vh' }}>
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
-                </div>
-              }>
+              <Suspense
+                fallback={
+                  <div
+                    className="min-h-screen flex items-center justify-center bg-background"
+                    style={{ minHeight: "100vh" }}
+                  >
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
+                  </div>
+                }
+              >
                 {children}
               </Suspense>
             </main>
