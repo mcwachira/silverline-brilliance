@@ -1,39 +1,62 @@
-"use client";
+import Image from 'next/image';
+import stageLighting from '@/src/assets/stage-lighting.jpg';
 
-import { LazyMotion, domAnimation, m } from "framer-motion";
-import Image from "next/image";
-import stageLighting from "@/src/assets/stage-lighting.jpg";
-
-const ServicesHero = () => {
+export default function ServicesHero() {
   return (
-    <section className="relative py-32 gradient-hero overflow-hidden">
-      <div className="absolute inset-0">
+    <section
+      className="relative overflow-hidden py-32 md:py-40 lg:py-48"
+      aria-labelledby="services-hero-heading"
+    >
+      {/* Background Image with Gradient Overlay */}
+      <div className="absolute inset-0 z-0 bg-background">
         <Image
           src={stageLighting}
-          alt="Professional Services"
+          alt="Professional stage lighting setup with dramatic purple and gold illumination showcasing Silverline Technologies' event production capabilities"
           fill
           priority
           sizes="100vw"
-          className="object-cover opacity-20"
+          quality={85}
+          placeholder="blur"
+          className="object-cover opacity-35"
         />
-
-        <div className="absolute inset-0 gradient-hero opacity-80" />
+        {/* Multi-layer gradient for depth */}
+        <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/60 to-background" />
+        <div className="absolute inset-0 bg-gradient-to-r from-background/40 via-transparent to-background/40" />
       </div>
 
-      <div className="container mx-auto px-4 relative z-10 text-center pt-16">
-        <LazyMotion features={domAnimation}>
-          <m.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="font-heading font-black text-4xl md:text-6xl text-gradient-gold uppercase mb-4"
+      {/* Content */}
+      <div className="container relative z-10 mx-auto px-4 pt-16 text-center">
+        <div className="mx-auto max-w-4xl space-y-6">
+          {/* Overline */}
+          <p className="text-sm font-semibold uppercase tracking-widest text-accent">
+            What We Offer
+          </p>
+
+          {/* Main Heading */}
+          <h1
+            id="services-hero-heading"
+            className="services-hero-title font-heading text-4xl font-bold uppercase tracking-tight md:text-6xl lg:text-7xl"
           >
             Our Services
-          </m.h1>
-        </LazyMotion>
+          </h1>
+
+          {/* Subtitle */}
+          <p className="services-hero-subtitle mx-auto max-w-2xl text-lg text-muted-foreground md:text-xl">
+            Comprehensive audiovisual solutions tailored to elevate your events
+            and productions
+          </p>
+
+          {/* Decorative Element */}
+          <div className="flex items-center justify-center gap-2 pt-4">
+            <div className="h-px w-12 bg-accent/50" />
+            <div className="h-1.5 w-1.5 rounded-full bg-accent" />
+            <div className="h-px w-12 bg-accent/50" />
+          </div>
+        </div>
       </div>
+
+      {/* Bottom Fade */}
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
     </section>
   );
-};
-
-export default ServicesHero;
+}
