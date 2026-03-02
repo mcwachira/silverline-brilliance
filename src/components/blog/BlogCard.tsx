@@ -7,6 +7,7 @@ import { Calendar, Clock, ArrowRight, User } from 'lucide-react';
 import { BlogPost } from '@/src/lib/blog/types';
 import { formatDate, getImageUrl, getReadTimeString } from '@/src/lib/blog/utils';
 import { BLOG_ROUTES } from '@/src/lib/blog/constants';
+import { calculateReadingTime } from '@/src/lib/blog/utils';
 
 interface BlogCardProps {
   post: BlogPost;
@@ -16,7 +17,10 @@ interface BlogCardProps {
 
 export function BlogCard({ post, variant = 'default', priority = false }: BlogCardProps) {
   const imageUrl = getImageUrl(post);
-  const postUrl = BLOG_ROUTES.POST(post.slug.current);
+  const postUrl = BLOG_ROUTES.POST(post?.slug);
+  const readingTime = post.readingTime || calculateReadingTime(post.content || []);
+
+ 
 
   if (variant === 'featured') {
     return (
@@ -53,7 +57,7 @@ export function BlogCard({ post, variant = 'default', priority = false }: BlogCa
                 </div>
                 <div className="flex items-center gap-2">
                   <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
-                  <span>{getReadTimeString(post.readingTime)}</span>
+                  <span>{getReadTimeString(readingTime)}</span>
                 </div>
               </div>
 
