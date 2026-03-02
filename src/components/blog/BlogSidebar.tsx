@@ -30,7 +30,7 @@ export function BlogSidebar({ recentPosts, categories, tags }: BlogSidebarProps)
             return (
               <Link
                 key={post._id}
-                href={BLOG_ROUTES.POST(post.slug.current)}
+                href={BLOG_ROUTES.POST(post.slug)}
                 className="group flex gap-3 sm:gap-4"
               >
                 <div className="relative h-16 w-16 sm:h-20 sm:w-20 flex-shrink-0 overflow-hidden rounded-lg">

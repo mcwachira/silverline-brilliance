@@ -111,13 +111,22 @@ export function searchPosts(posts:BlogPost[], query:string):BlogPost[] {
  * Filter posts based on search query
  */
 
-export function filterByCategory(posts:BlogPost[], category:string):BlogPost[]{
-  if(!category || category === "all") return posts;
-return posts.filter((post) =>
-    post.categories?.some((cat) => cat.slug === category || cat.name === category) ||
-    post.category.slug === category ||
-    post.category.name === category
-  );
+export function filterByCategory(posts: BlogPost[], category: string) {
+  return posts.filter((post) => {
+    const multiMatch =
+      Array.isArray(post.categories) &&
+      post.categories.some(
+        (cat) =>
+          cat?.slug === category ||
+          cat?.name === category
+      );
+
+    const singleMatch =
+      post.category?.slug === category ||
+      post.category?.name === category;
+
+    return multiMatch || singleMatch;
+  });
 }
 
 /**
