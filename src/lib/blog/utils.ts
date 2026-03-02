@@ -44,23 +44,31 @@ export function getOgImageUrl(post: BlogPost): string {
 /**
  * Calculate reading time from content
  */
+/**
+ * Calculate reading time from content
+ */
+export function calculateReadingTime(content: any[]): number {
+  if (!content || content.length === 0) return 5;
 
-export function calculateReadingTime(content:any[]):number {
+  const text = content
+    .filter((block) => block._type === 'block')
+    .map((block) =>
+      block.children
+        ?.filter((child: any) => child._type === 'span')
+        .map((child: any) => child.text)
+        .join('')
+    )
+    .join(' ');
 
-    if(!content || content.length === 0) return 5;
+  if (!text || text.trim().length === 0) return 5;
 
-    const text = content.filter((block) => block._type === 'block').
-    map((block) =>block.children?.filter((child:any) => child._type === 'span')
-    .map((child:any)=> child.text).join("")).join(" ");
-   
   const wordsPerMinute = 200;
   const wordCount = text.trim().split(/\s+/).length;
   const minutes = Math.ceil(wordCount / wordsPerMinute);
-  
-  return minutes || 5;
+
+  // Return at least 1 minute
+  return Math.max(minutes, 1);
 }
-
-
 /**
  * Generate excerpt from content if not provided
  */
@@ -247,8 +255,8 @@ export function truncateText(text: string, maxLength: number): string {
 /**
  * Get estimated read time string
  */
-export function getReadTimeString(minutes: number): string {
-  if (minutes < 1) return 'Less than a minute';
+export function getReadTimeString(minutes: number | undefined): string {
+  if (!minutes || minutes < 1) return 'Less than a minute';
   if (minutes === 1) return '1 minute read';
   return `${minutes} min read`;
 }
