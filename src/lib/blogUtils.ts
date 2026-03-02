@@ -1,4 +1,5 @@
-import { BlogPost, Heading } from "@/types/blog";
+// import { BlogPost } from "@/types/blog";
+import {BlogPost , Heading } from "../types/blog";
 
 /**
  * Calculate reading time based on average reading speed of 200 words per minute

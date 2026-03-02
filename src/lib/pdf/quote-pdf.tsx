@@ -166,7 +166,7 @@ function fmt(n: number) {
   return `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-function statusStyle(status: string): object {
+function statusStyle(status: string): { bg: string; color: string } {
   const map: Record<string, { bg: string; color: string }> = {
     draft:    { bg: color.faint,   color: "#fff" },
     sent:     { bg: "#2563eb",     color: "#fff" },
@@ -216,8 +216,8 @@ export function QuotePDFDocument({ quote }: QuotePDFDocumentProps) {
           <View style={s.headerRight}>
             <Text style={s.quoteLabel}>QUOTE</Text>
             <Text style={s.quoteRef}>{quote.quote_number}</Text>
-            <View style={[s.statusChip, { backgroundColor: sstyle.bg as string }]}>
-              <Text style={{ color: sstyle.color as string, fontSize: 7, fontWeight: "bold", textTransform: "uppercase" }}>
+            <View style={[s.statusChip, { backgroundColor: sstyle.bg }]}>
+              <Text style={{ color: sstyle.color, fontSize: 7, fontWeight: "bold", textTransform: "uppercase" }}>
                 {quote.status}
               </Text>
             </View>

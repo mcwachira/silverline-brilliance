@@ -108,7 +108,7 @@ function bookingCreatedAdminEmail(booking: Booking): { subject: string; html: st
     html: baseTemplate(`
       <p>You have a <strong style="color:#FFD700;">new booking request</strong> from a client. Please review and confirm.</p>
       ${bookingDetailCard(booking)}
-      ${booking?.notes ? `<p><strong style="color:#c070e8;">Client Notes:</strong><br/>${booking?.notes}</p>` : ''}
+      ${booking?.special_requirements ? `<p><strong style="color:#c070e8;">Client Notes:</strong><br/>${booking?.special_requirements}</p>` : ''}
       <div style="text-align:center; margin-top:32px;">
         <a href="${process.env.NEXT_PUBLIC_ADMIN_URL}//admin/dashboard/bookings/${booking.id}" class="btn">View & Confirm Booking</a>
       </div>
