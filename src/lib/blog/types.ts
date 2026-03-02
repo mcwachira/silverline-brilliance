@@ -25,9 +25,10 @@ export interface BlogPost {
   _id: string;
   id: string;
   title: string;
-  slug: {
-    current: string;
-  };
+  slug:string
+  // slug: {
+  //   current: string;
+  // };
   excerpt: string;
   coverImage: string;
   publishedAt: string;

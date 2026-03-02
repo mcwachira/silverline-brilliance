@@ -54,7 +54,7 @@ export interface BlogPost {
   tags: Tag[];
   publishedAt: string;
   updatedAt?: string;
-  readingTime: number;
+  readingTime?: number;
   viewCount: number;
   featured: boolean;
   metaTitle: string;
