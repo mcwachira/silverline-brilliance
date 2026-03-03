@@ -5,9 +5,16 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { useWebHaptics } from "web-haptics/react";
 import {
-  Send, Loader2, CheckCircle, User, Mail,
-  Phone, MessageSquare, ChevronDown,
+  Send,
+  Loader2,
+  CheckCircle,
+  User,
+  Mail,
+  Phone,
+  MessageSquare,
+  ChevronDown,
 } from "lucide-react";
 import {
   ContactSchema,
@@ -35,7 +42,7 @@ const HOW_HEARD = [
 
 export default function ContactForm() {
   const [reference, setReference] = useState<string | null>(null);
-
+  const { trigger } = useWebHaptics();
   const {
     register,
     handleSubmit,
@@ -136,10 +143,14 @@ export default function ContactForm() {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
-
         {/* Name + Email */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Full Name" icon={User} error={errors.full_name?.message} required>
+          <Field
+            label="Full Name"
+            icon={User}
+            error={errors.full_name?.message}
+            required
+          >
             <input
               {...register("full_name")}
               placeholder="John Kamau"
@@ -147,7 +158,12 @@ export default function ContactForm() {
             />
           </Field>
 
-          <Field label="Email Address" icon={Mail} error={errors.email?.message} required>
+          <Field
+            label="Email Address"
+            icon={Mail}
+            error={errors.email?.message}
+            required
+          >
             <input
               {...register("email")}
               type="email"
@@ -159,7 +175,11 @@ export default function ContactForm() {
 
         {/* Phone + Service */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Phone Number" icon={Phone} error={errors.phone?.message}>
+          <Field
+            label="Phone Number"
+            icon={Phone}
+            error={errors.phone?.message}
+          >
             <input
               {...register("phone")}
               type="tel"
@@ -176,7 +196,9 @@ export default function ContactForm() {
               >
                 <option value="">Select a service...</option>
                 {SERVICES.map((s) => (
-                  <option key={s} value={s}>{s}</option>
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
                 ))}
               </select>
               <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
@@ -185,7 +207,12 @@ export default function ContactForm() {
         </div>
 
         {/* Subject */}
-        <Field label="Subject" icon={MessageSquare} error={errors.subject?.message} required>
+        <Field
+          label="Subject"
+          icon={MessageSquare}
+          error={errors.subject?.message}
+          required
+        >
           <input
             {...register("subject")}
             placeholder="What's this regarding?"
@@ -194,7 +221,12 @@ export default function ContactForm() {
         </Field>
 
         {/* Message */}
-        <Field label="Message" icon={MessageSquare} error={errors.message?.message} required>
+        <Field
+          label="Message"
+          icon={MessageSquare}
+          error={errors.message?.message}
+          required
+        >
           <div className="relative">
             <textarea
               {...register("message")}
@@ -205,7 +237,9 @@ export default function ContactForm() {
             />
             <span
               className={`absolute bottom-2.5 right-3 text-xs transition-colors ${
-                messageLength > 2500 ? "text-yellow-500" : "text-muted-foreground"
+                messageLength > 2500
+                  ? "text-yellow-500"
+                  : "text-muted-foreground"
               }`}
             >
               {messageLength}/3000
@@ -222,7 +256,9 @@ export default function ContactForm() {
             >
               <option value="">Select an option...</option>
               {HOW_HEARD.map((h) => (
-                <option key={h} value={h}>{h}</option>
+                <option key={h} value={h}>
+                  {h}
+                </option>
               ))}
             </select>
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
@@ -232,24 +268,31 @@ export default function ContactForm() {
         {/* Submit */}
         <button
           type="submit"
+          onClick={() => trigger()}
           disabled={isSubmitting}
           className="w-full btn-primary flex items-center justify-center gap-2.5 py-3.5 rounded-xl font-heading font-bold tracking-wide transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {isSubmitting ? (
-            <><Loader2 className="w-4 h-4 animate-spin" /> Sending...</>
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" /> Sending...
+            </>
           ) : (
-            <><Send className="w-4 h-4" /> Send Message</>
+            <>
+              <Send className="w-4 h-4" /> Send Message
+            </>
           )}
         </button>
 
         <p className="text-center text-xs text-muted-foreground">
           By submitting you agree to our{" "}
-          <a href="/privacy" className="text-accent hover:underline underline-offset-4">
+          <a
+            href="/privacy"
+            className="text-accent hover:underline underline-offset-4"
+          >
             Privacy Policy
           </a>
           . We never share your information.
         </p>
-
       </form>
     </motion.div>
   );
