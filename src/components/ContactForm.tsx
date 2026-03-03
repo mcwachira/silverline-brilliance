@@ -142,7 +142,21 @@ export default function ContactForm() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
+      <form
+        onSubmit={handleSubmit(
+          async (data) => {
+            // ✅ Fires only if validation succeeds
+            trigger();
+            await onSubmit(data);
+          },
+          () => {
+            // ❌ Optional: error haptic
+            trigger({ type: "notification", level: "error" });
+          },
+        )}
+        noValidate
+        className="space-y-5"
+      >
         {/* Name + Email */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field
@@ -268,7 +282,6 @@ export default function ContactForm() {
         {/* Submit */}
         <button
           type="submit"
-          onClick={() => trigger()}
           disabled={isSubmitting}
           className="w-full btn-primary flex items-center justify-center gap-2.5 py-3.5 rounded-xl font-heading font-bold tracking-wide transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
         >
